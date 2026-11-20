@@ -23,3 +23,11 @@ export function cuando(iso) {
   if (igual(d, ayer)) return 'ayer'
   return `${d.getDate()} de ${meses[d.getMonth()]}`
 }
+
+const reloj = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit' })
+export const hora = (iso) => reloj.format(new Date(iso))
+
+export function nombreDia(iso) {
+  const c = cuando(iso)
+  return c === 'hoy' ? 'Hoy' : c === 'ayer' ? 'Ayer' : fechaLarga(new Date(iso))
+}

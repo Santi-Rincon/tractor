@@ -1,4 +1,4 @@
-import { get, set } from 'idb-keyval'
+import { get, set, del } from 'idb-keyval'
 
 // Las primeras pruebas usaban "Papá" y "Padrino"; se pasan a los nombres reales.
 const RENOMBRES = { 'Papá': 'Santiago', 'Padrino': 'Raúl' }
@@ -14,3 +14,8 @@ export async function cargar() {
 
 export const guardarYo = (yo) => set('yo', yo)
 export const guardarGastos = (gastos) => set('gastos', gastos)
+
+// Las fotos van aparte para que la lista de gastos cargue liviana.
+export const guardarFoto = (id, blob) => set(`foto:${id}`, blob)
+export const leerFoto = (id) => get(`foto:${id}`)
+export const borrarFoto = (id) => del(`foto:${id}`)

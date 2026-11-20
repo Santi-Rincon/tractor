@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
-import { cargar, guardarGastos, guardarYo } from './store.js'
-import { plata, fechaLarga, saludo, cuando } from './formato.js'
+import { cargar, guardarGastos, guardarYo, guardarFoto, leerFoto, borrarFoto } from './store.js'
+import { plata, fechaLarga, saludo, cuando, hora, nombreDia } from './formato.js'
+import { comprimir } from './foto.js'
 
 export const PERSONAS = ['Santiago', 'Raúl', 'Leo']
 
@@ -34,6 +35,7 @@ export function App() {
   const [dir, setDir] = useState('adelante')
   const [borrador, setBorrador] = useState({ categoria: null, detalle: '', digitos: '' })
   const [ultimo, setUltimo] = useState(null)
+  const [abierto, setAbierto] = useState(null)
   const [aviso, setAviso] = useState('')
   const avisoTimer = useRef()
 
@@ -80,15 +82,18 @@ export function App() {
     ir(c.id === 'otros' ? 'detalle' : 'cuanto')
   }
 
-  const guardar = async () => {
+  const guardar = async (foto) => {
     const g = {
       id: nuevoId(),
       fecha: new Date().toISOString(),
       categoria: borrador.categoria.id,
       nombre: borrador.categoria.id === 'otros' ? borrador.detalle.trim() : borrador.categoria.nombre,
       valor: Number(borrador.digitos),
-      pagadoPor: yo
+      pagadoPor: yo,
+      registradoPor: yo,
+      foto: Boolean(foto)
     }
+    if (foto) await guardarFoto(g.id, foto)
     const nuevos = [g, ...gastos]
     setGastos(nuevos); setUltimo(g)
     await guardarGastos(nuevos)
@@ -96,21 +101,34 @@ export function App() {
     fijarPila(['inicio', 'listo'], 'adelante')
   }
 
-  const deshacer = async () => {
-    const nuevos = gastos.filter((g) => g.id !== ultimo.id)
+  const borrarGasto = async (id) => {
+    const g = gastos.find((x) => x.id === id)
+    const nuevos = gastos.filter((x) => x.id !== id)
     setGastos(nuevos); await guardarGastos(nuevos)
+    if (g?.foto) await borrarFoto(id)
+  }
+
+  const deshacer = async () => {
+    await borrarGasto(ultimo.id)
     alInicio(); mostrarAviso('Se borró el gasto')
+  }
+
+  const abrir = (id) => { vibrar(8); setAbierto(id); ir('recibo') }
+  const borrarDesdeRecibo = async (id) => {
+    await borrarGasto(id)
+    volver(); mostrarAviso('Se borró el gasto')
   }
 
   if (!listo) return <div class="app" />
   if (!yo) return <div class="app"><Quien onElegir={elegirPersona} /></div>
 
-  const pasos = borrador.categoria?.id === 'otros' ? 3 : 2
+  const pasos = borrador.categoria?.id === 'otros' ? 4 : 3
+  const gastoAbierto = gastos.find((g) => g.id === abierto)
   let pantalla = pila[pila.length - 1]
-  if ((pantalla === 'cuanto' && !borrador.categoria) || (pantalla === 'listo' && !ultimo)) pantalla = 'inicio'
+  if ((['cuanto', 'foto'].includes(pantalla) && !borrador.categoria) || (pantalla === 'listo' && !ultimo) || (pantalla === 'recibo' && !gastoAbierto)) pantalla = 'inicio'
   let vista
   if (pantalla === 'inicio') vista = (
-    <Inicio yo={yo} gastos={gastos}
+    <Inicio yo={yo} gastos={gastos} onAbrir={abrir} onVerTodo={() => ir('historial')}
       onAccion={(a) => a === 'gasto' ? empezarGasto() : mostrarAviso(`${ACCIONES.find((x) => x.id === a).nombre} llega en la próxima versión`)}
       onCambiar={() => elegirPersona(null)} />
   )
@@ -120,9 +138,12 @@ export function App() {
       onVolver={volver} onSiguiente={() => ir('cuanto')} />
   )
   else if (pantalla === 'cuanto' && borrador.categoria) vista = (
-    <Cuanto categoria={borrador.categoria} detalle={borrador.detalle} digitos={borrador.digitos} paso={pasos} pasos={pasos}
-      onDigitos={(d) => setBorrador((b) => ({ ...b, digitos: d }))} onVolver={volver} onGuardar={guardar} />
+    <Cuanto categoria={borrador.categoria} detalle={borrador.detalle} digitos={borrador.digitos} paso={pasos - 1} pasos={pasos}
+      onDigitos={(d) => setBorrador((b) => ({ ...b, digitos: d }))} onVolver={volver} onSiguiente={() => ir('foto')} />
   )
+  else if (pantalla === 'foto') vista = <Foto paso={pasos} pasos={pasos} onVolver={volver} onGuardar={guardar} />
+  else if (pantalla === 'historial') vista = <Historial gastos={gastos} onVolver={volver} onAbrir={abrir} />
+  else if (pantalla === 'recibo') vista = <Recibo gasto={gastoAbierto} yo={yo} onVolver={volver} onBorrar={borrarDesdeRecibo} />
   else if (pantalla === 'listo') vista = <Listo gasto={ultimo} yo={yo} onInicio={alInicio} onDeshacer={deshacer} />
 
   return (
@@ -146,7 +167,19 @@ function Quien({ onElegir }) {
   )
 }
 
-function Inicio({ yo, gastos, onAccion, onCambiar }) {
+function Fila({ g, onAbrir }) {
+  const cat = CATEGORIAS.find((c) => c.id === g.categoria)
+  return (
+    <button type="button" class="row" onClick={() => onAbrir(g.id)}>
+      <Icon name={cat?.icono ?? 'gas-pump-duotone'} class="ic-s gasto" />
+      <span class="rt"><b>{g.nombre}</b><small>{g.pagadoPor} · {cuando(g.fecha)}</small></span>
+      <span class="amt">{plata(g.valor)}</span>
+      <Icon name="caret-right-bold" class="ic-xs flecha" />
+    </button>
+  )
+}
+
+function Inicio({ yo, gastos, onAccion, onCambiar, onAbrir, onVerTodo }) {
   const recientes = gastos.slice(0, 3)
   return (
     <main class="scr">
@@ -166,16 +199,12 @@ function Inicio({ yo, gastos, onAccion, onCambiar }) {
       <section class="last">
         <h2 class="lh">Lo último que se anotó</h2>
         {recientes.length === 0 && <p class="vacio">Todavía no hay nada. Toque <b>Gasto</b> para anotar el primero.</p>}
-        {recientes.map((g) => {
-          const cat = CATEGORIAS.find((c) => c.id === g.categoria)
-          return (
-            <div class="row">
-              <Icon name={cat?.icono ?? 'gas-pump-duotone'} class="ic-s gasto" />
-              <span class="rt"><b>{g.nombre}</b><small>{g.pagadoPor} · {cuando(g.fecha)}</small></span>
-              <span class="amt">{plata(g.valor)}</span>
-            </div>
-          )
-        })}
+        {recientes.map((g) => <Fila g={g} onAbrir={onAbrir} />)}
+        {gastos.length > 0 && (
+          <button type="button" class="ver-todo" onClick={onVerTodo}>
+            Ver todo{gastos.length > 3 ? ` (${gastos.length})` : ''} <Icon name="caret-right-bold" class="ic-xs" />
+          </button>
+        )}
       </section>
     </main>
   )
@@ -214,7 +243,7 @@ function Detalle({ valor, onCambio, onVolver, onSiguiente }) {
   const listo = valor.trim().length > 1
   return (
     <main class="scr">
-      <Barra titulo={<>Gasto · <b>Otros</b></>} paso={2} pasos={3} progreso={2 / 4} onVolver={onVolver} />
+      <Barra titulo={<>Gasto · <b>Otros</b></>} paso={2} pasos={4} progreso={2 / 5} onVolver={onVolver} />
       <h1 class="q">¿En qué gastó?</h1>
       <input class="campo" type="text" value={valor} enterkeyhint="next" autocapitalize="sentences"
         placeholder="Ej.: llanta, filtro, soldadura" onInput={(e) => onCambio(e.currentTarget.value)}
@@ -225,7 +254,7 @@ function Detalle({ valor, onCambio, onVolver, onSiguiente }) {
   )
 }
 
-function Cuanto({ categoria, detalle, digitos, paso, pasos, onDigitos, onVolver, onGuardar }) {
+function Cuanto({ categoria, detalle, digitos, paso, pasos, onDigitos, onVolver, onSiguiente }) {
   const valor = Number(digitos || 0)
   const tecla = (k) => {
     vibrar(8)
@@ -250,7 +279,7 @@ function Cuanto({ categoria, detalle, digitos, paso, pasos, onDigitos, onVolver,
         ))}
         <button type="button" class="key" aria-label="Borrar" onClick={() => tecla('borrar')}><Icon name="backspace-duotone" class="ic-s" /></button>
       </div>
-      <button type="button" class="primary" disabled={!valor} onClick={onGuardar}>Guardar</button>
+      <button type="button" class="primary" disabled={!valor} onClick={onSiguiente}>Siguiente</button>
     </main>
   )
 }
@@ -274,6 +303,134 @@ function Listo({ gasto, yo, onInicio, onDeshacer }) {
           <button type="button" class="primary" onClick={onInicio}>Volver al inicio</button>
           <button type="button" class="ghost" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="arrow-counter-clockwise-bold" class="ic-s" /> Deshacer</button>
         </>
+      )}
+    </main>
+  )
+}
+
+function Foto({ paso, pasos, onVolver, onGuardar }) {
+  const [foto, setFoto] = useState(null)
+  const [url, setUrl] = useState('')
+  const [estado, setEstado] = useState('')
+  const entrada = useRef()
+  useEffect(() => () => url && URL.revokeObjectURL(url), [url])
+
+  const alElegir = async (e) => {
+    const archivo = e.currentTarget.files?.[0]
+    e.currentTarget.value = ''
+    if (!archivo) return
+    setEstado('Preparando la foto…')
+    try {
+      const blob = await comprimir(archivo)
+      setFoto(blob); setUrl(URL.createObjectURL(blob)); setEstado('')
+    } catch {
+      setEstado('No se pudo leer la foto. Intente otra vez.')
+    }
+  }
+  const guardar = async (conFoto) => { setEstado('Guardando…'); await onGuardar(conFoto ? foto : null) }
+  const tomar = () => entrada.current.click()
+
+  return (
+    <main class="scr">
+      <Barra titulo={<b>Gasto</b>} paso={paso} pasos={pasos} progreso={paso / (pasos + 1)} onVolver={onVolver} />
+      <h1 class="q">¿Tiene foto de la factura?</h1>
+      <input ref={entrada} type="file" accept="image/*" capture="environment" hidden onChange={alElegir} />
+      {foto ? (
+        <>
+          <img class="vista-foto" src={url} alt="Foto de la factura" />
+          <button type="button" class="ghost" onClick={tomar}><Icon name="camera-duotone" class="ic-s" /> Tomar otra</button>
+          <button type="button" class="primary" disabled={estado === 'Guardando…'} onClick={() => guardar(true)}>Guardar</button>
+        </>
+      ) : (
+        <>
+          <div class="lista-grande">
+            <button type="button" class="opcion con-icono" onClick={tomar}>
+              <span class="burbuja"><Icon name="camera-duotone" /></span>Tomar foto
+            </button>
+            <button type="button" class="opcion con-icono" disabled={Boolean(estado)} onClick={() => guardar(false)}>
+              <span class="burbuja neutra"><Icon name="check-bold" /></span>Guardar sin foto
+            </button>
+          </div>
+        </>
+      )}
+      {estado && <p class="pista" role="status">{estado}</p>}
+    </main>
+  )
+}
+
+function Historial({ gastos, onVolver, onAbrir }) {
+  const dias = []
+  for (const g of gastos) {
+    const clave = new Date(g.fecha).toDateString()
+    let dia = dias.find((d) => d.clave === clave)
+    if (!dia) { dia = { clave, nombre: nombreDia(g.fecha), total: 0, items: [] }; dias.push(dia) }
+    dia.items.push(g); dia.total += g.valor
+  }
+  return (
+    <main class="scr">
+      <div class="bar">
+        <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
+        <span class="crumb"><b class="neutro">Todo lo anotado</b></span>
+      </div>
+      {dias.length === 0 && <p class="vacio separado">Todavía no hay nada anotado.</p>}
+      {dias.map((d) => (
+        <section class="dia">
+          <header class="dia-h"><h2>{d.nombre}</h2><span>Gastado <b>{plata(d.total)}</b></span></header>
+          {d.items.map((g) => <Fila g={g} onAbrir={onAbrir} />)}
+        </section>
+      ))}
+    </main>
+  )
+}
+
+function Recibo({ gasto, yo, onVolver, onBorrar }) {
+  const [url, setUrl] = useState('')
+  const [grande, setGrande] = useState(false)
+  const [confirmando, setConfirmando] = useState(false)
+  const cat = CATEGORIAS.find((c) => c.id === gasto.categoria)
+  const autor = gasto.registradoPor ?? gasto.pagadoPor
+  useEffect(() => {
+    let u = ''
+    if (gasto.foto) leerFoto(gasto.id).then((b) => { if (b) { u = URL.createObjectURL(b); setUrl(u) } })
+    return () => u && URL.revokeObjectURL(u)
+  }, [gasto.id])
+
+  return (
+    <main class="scr">
+      <div class="bar">
+        <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
+        <span class="crumb"><b>Recibo de gasto</b></span>
+      </div>
+      <article class="recibo">
+        <div class="r-top"><span class="burbuja"><Icon name={cat?.icono ?? 'receipt-duotone'} /></span><span class="r-tipo">{gasto.nombre}</span></div>
+        <div class="r-valor"><span class="cur">$</span>{plata(gasto.valor)}</div>
+        <dl class="r-filas">
+          <div><dt>Qué</dt><dd>{cat?.id === 'otros' ? `Otros · ${gasto.nombre}` : gasto.nombre}</dd></div>
+          <div><dt>Quién pagó</dt><dd>{gasto.pagadoPor}</dd></div>
+          <div><dt>Fecha</dt><dd>{fechaLarga(new Date(gasto.fecha))}</dd></div>
+          <div><dt>Hora</dt><dd>{hora(gasto.fecha)}</dd></div>
+          <div><dt>Anotado por</dt><dd>{autor}</dd></div>
+        </dl>
+        {gasto.foto
+          ? url && <button type="button" class="r-foto" onClick={() => setGrande(true)}><img src={url} alt="Foto de la factura" /><span>Toque para verla grande</span></button>
+          : <p class="r-sin">Sin foto de la factura</p>}
+      </article>
+      <div class="sp" />
+      {autor === yo ? (
+        confirmando ? (
+          <div class="confirma" role="alertdialog" aria-label="Confirmar borrado">
+            <p>¿Seguro que quiere borrar este gasto?</p>
+            <button type="button" class="primary peligro" onClick={() => onBorrar(gasto.id)}>Sí, borrarlo</button>
+            <button type="button" class="ghost" onClick={() => setConfirmando(false)}>No, dejarlo</button>
+          </div>
+        ) : (
+          <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este gasto</button>
+        )
+      ) : <p class="pista centro">Solo {autor} puede borrarlo.</p>}
+      {grande && (
+        <button type="button" class="foto-grande" onClick={() => setGrande(false)} aria-label="Cerrar foto">
+          <img src={url} alt="Foto de la factura" /><span class="cerrar"><Icon name="x-bold" class="ic-s" /> Cerrar</span>
+        </button>
       )}
     </main>
   )
