@@ -47,12 +47,24 @@ export function ganadoConductor(t) {
     : Math.round((l.minutos / 60) * PAGO_CONDUCTOR_HORA)), 0)
 }
 
-export function cuentaConductor(trabajos, conductor) {
+export function cuentaConductor(trabajos, conductor, pagos = []) {
   const suyos = trabajos.filter((t) => t.conductor === conductor)
   let minutos = 0, bultos = 0, ganado = 0
   for (const t of suyos) {
     ganado += ganadoConductor(t)
     for (const l of t.labores) l.tipo === 'remolcada' ? (bultos += l.bultos) : (minutos += l.minutos)
   }
-  return { conductor, trabajos: suyos, minutos, bultos, ganado }
+  const pagado = pagos.filter((x) => x.conductor === conductor).reduce((s, x) => s + x.valor, 0)
+  return { conductor, trabajos: suyos, minutos, bultos, ganado, pagado, debe: ganado - pagado }
+}
+
+// Lo que debe cada cliente: lo trabajado (ya sin el ACPM que puso) menos lo que ha pagado.
+export function deudas(clientes, trabajos, cobros) {
+  return clientes.map((c) => {
+    const suyos = trabajos.filter((t) => t.clienteId === c.id)
+    const pagos = cobros.filter((x) => x.clienteId === c.id)
+    const trabajado = suyos.reduce((s, t) => s + totalTrabajo(t), 0)
+    const pagado = pagos.reduce((s, x) => s + x.valor, 0)
+    return { cliente: c, trabajos: suyos, pagos, trabajado, pagado, debe: trabajado - pagado }
+  })
 }

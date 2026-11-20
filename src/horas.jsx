@@ -11,17 +11,17 @@ export function MisHorasRenglon({ cuenta, onAbrir }) {
     <button type="button" class="mis-horas" onClick={() => { vibrar(8); onAbrir() }}>
       <span class="mh-ic"><Icon name="clock-duotone" class="ic-s" /></span>
       <span class="rt"><b>Mis horas</b><small>{cifras(cuenta)}</small></span>
-      <span class="mh-debe"><small>se me debe</small><b>{plata(cuenta.ganado)}</b></span>
+      <span class="mh-debe"><small>se me debe</small><b>{plata(cuenta.debe)}</b></span>
       <Icon name="caret-right-bold" class="ic-xs flecha" />
     </button>
   )
 }
 
 // Horas de los conductores. Los dueños ven a todos; el conductor solo lo suyo.
-export function Horas({ yo, trabajos, clientes, elegido, onElegir, onVolver, onAbrir, onAnadir }) {
+export function Horas({ yo, trabajos, pagos, clientes, elegido, onElegir, onVolver, onAbrir, onAnadir }) {
   const esConductor = CONDUCTORES.includes(yo)
   const quienes = !esConductor || yo === 'Raúl' ? CONDUCTORES : [yo]
-  const cuentas = quienes.map((c) => cuentaConductor(trabajos, c))
+  const cuentas = quienes.map((c) => cuentaConductor(trabajos, c, pagos))
   // Sin elección: uno mismo si maneja; si no, el último que trabajó.
   const porDefecto = esConductor ? yo : (trabajos.find((t) => quienes.includes(t.conductor))?.conductor ?? quienes[0])
   const actual = elegido && quienes.includes(elegido) ? elegido : porDefecto
@@ -54,7 +54,8 @@ export function Horas({ yo, trabajos, clientes, elegido, onElegir, onVolver, onA
       )}
       <section class="hero-horas" aria-live="polite">
         <span class="hh-quien">{actual} · se le debe</span>
-        <b class="hh-valor"><span class="cur">$</span>{plata(cuenta.ganado)}</b>
+        <b class="hh-valor"><span class="cur">$</span>{plata(cuenta.debe)}</b>
+        {cuenta.pagado > 0 && <span class="hh-nota">Ganó {plata(cuenta.ganado)} · le han pagado {plata(cuenta.pagado)}</span>}
         <div class="hh-datos">
           <span><b>{cuenta.minutos ? tiempo(cuenta.minutos) : '0 h'}</b>trabajadas</span>
           <span><b>{cuenta.bultos}</b>bultos</span>

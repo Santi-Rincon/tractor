@@ -2,7 +2,7 @@ import { get, set, del, getMany } from 'idb-keyval'
 
 // Las primeras pruebas usaban "Papá" y "Padrino"; se pasan a los nombres reales.
 const RENOMBRES = { 'Papá': 'Santiago', 'Padrino': 'Raúl' }
-const LISTAS = ['gastos', 'trabajos', 'cobros', 'clientes']
+const LISTAS = ['gastos', 'trabajos', 'cobros', 'clientes', 'pagos']
 
 export async function cargar() {
   const [yoGuardado, ...listas] = await getMany(['yo', ...LISTAS])

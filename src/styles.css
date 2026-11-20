@@ -304,3 +304,24 @@ h1, h2, p { margin: 0; }
 /* Día del trabajo */
 .dia-elegir { margin-top: 16px; }
 .fecha-oculta { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* Plata */
+.p-plata i { background: var(--plata); }
+.chip.ch-plata.on { background: var(--plata); border-color: var(--plata); color: #fff; box-shadow: 0 3px 0 #3A2860; }
+.i-pago { color: var(--plata); }
+.acciones-plata { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+.accion-p { display: flex; flex-direction: column; align-items: flex-start; justify-content: space-between; gap: 10px; min-height: 120px; padding: 16px; border-radius: 22px; background: var(--plata); color: #fff; text-align: left; font-size: 19px; font-weight: 600; line-height: 1.15; box-shadow: 0 5px 0 #3A2860; transition: transform .1s ease, box-shadow .1s ease; }
+.accion-p:active { transform: translateY(4px); box-shadow: 0 1px 0 #3A2860; }
+.bloque { display: flex; flex-direction: column; gap: 8px; margin-top: 24px; }
+.bloque-h { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; padding: 0 4px; }
+.bloque-h h2 { font-size: 19px; font-weight: 600; }
+.bloque-h b { font-size: 19px; font-weight: 600; color: var(--peligro); font-variant-numeric: tabular-nums; }
+.amt.debe { color: var(--peligro); }
+.sel-av.grande { width: 36px; height: 36px; font-size: 17px; }
+.hh-valor.rojo { color: var(--peligro); }
+.hh-quien.espacio { margin-top: 14px; }
+.hh-datos.dos { grid-template-columns: 1fr 1fr; }
+.hh-nota { font-size: 14px; color: var(--suave); margin: -8px 0 12px; }
+.row.mov { margin-top: 8px; }
+.primary.morado { background: var(--plata); }
+.badge.morado { background: var(--plata); }

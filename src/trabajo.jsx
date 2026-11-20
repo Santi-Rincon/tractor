@@ -294,7 +294,8 @@ export function ReciboTrabajo({ t, cliente, cobro, yo, onVolver, onBorrar }) {
   )
 }
 
-export function ReciboCobro({ c, cliente, onVolver, onVerTrabajo }) {
+export function ReciboCobro({ c, cliente, yo, onVolver, onVerTrabajo, onBorrar }) {
+  const [confirmando, setConfirmando] = useState(false)
   return (
     <main class="scr">
       <div class="bar">
@@ -313,6 +314,10 @@ export function ReciboCobro({ c, cliente, onVolver, onVerTrabajo }) {
       </article>
       <div class="sp" />
       {c.trabajoId && <button type="button" class="ghost" onClick={onVerTrabajo}>Ver el trabajo de este pago</button>}
+      {!c.trabajoId && (c.registradoPor === yo
+        ? <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este pago</button>
+        : <p class="pista centro">Solo {c.registradoPor} puede borrarlo.</p>)}
+      {confirmando && <ConfirmarBorrado que="este pago" onSi={() => onBorrar(c.id)} onNo={() => setConfirmando(false)} />}
     </main>
   )
 }
