@@ -3,7 +3,8 @@ import { Icon } from './Icon.jsx'
 import { cargar, guardarLista, guardarYo, guardarFoto, borrarFoto } from './store.js'
 import { plata, fechaLarga, saludo, cuando, nombreDia } from './formato.js'
 import { vibrar, nuevoId, Encabezado, ConfirmarBorrado, Avatar, COLORES_CLIENTE } from './comunes.jsx'
-import { CONDUCTORES, labor, totalTrabajo, tiempo } from './reglas.js'
+import { CONDUCTORES, labor, totalTrabajo, tiempo, cuentaConductor } from './reglas.js'
+import { Horas, MisHorasRenglon } from './horas.jsx'
 import { Categoria, Detalle, Cuanto, Foto, ReciboGasto, categoria } from './gasto.jsx'
 import {
   ElegirCliente, ClienteNuevo, ElegirVereda, ElegirLabor, Tiempo, Bultos, Pregunta, Valor,
@@ -43,6 +44,7 @@ export function App() {
   const [abierto, setAbierto] = useState(null)
   const [filtro, setFiltro] = useState('todo')
   const [filtroConductor, setFiltroConductor] = useState('todos')
+  const [conductorHoras, setConductorHoras] = useState(null)
   const [aviso, setAviso] = useState('')
   const avisoTimer = useRef()
 
@@ -193,14 +195,15 @@ export function App() {
   let vista
   switch (pantalla) {
     case 'inicio': vista = (
-      <Inicio yo={yo} registros={registros} clientes={datos.clientes} onAbrir={abrir} onVerTodo={() => ir('historial')} onCambiar={() => elegirPersona(null)}
+      <Inicio yo={yo} registros={registros} clientes={datos.clientes} trabajos={datos.trabajos} onHoras={() => ir('horas')} onAbrir={abrir} onVerTodo={() => ir('historial')} onCambiar={() => elegirPersona(null)}
         onAccion={(a) => {
           if (a === 'gasto') { setBg(borradorGasto()); ir('g-categoria') }
           else if (a === 'trabajo') empezarTrabajo()
           else mostrarAviso(`${ACCIONES.find((x) => x.id === a).nombre} llega en la próxima versión`)
         }} />
     ); break
-    case 'trabajados': vista = <Trabajados trabajos={datos.trabajos} clientes={datos.clientes} filtro={filtroConductor} onFiltro={setFiltroConductor} onVolver={volver} onAbrir={abrir} />; break
+    case 'trabajados': vista = <Trabajados trabajos={datos.trabajos} clientes={datos.clientes} filtro={filtroConductor} onFiltro={setFiltroConductor} onVolver={volver} onAbrir={abrir} onHoras={() => ir('horas')} />; break
+    case 'horas': vista = <Horas yo={yo} trabajos={datos.trabajos} clientes={datos.clientes} elegido={conductorHoras} onElegir={setConductorHoras} onVolver={volver} onAbrir={abrir} />; break
     case 'historial': vista = <Historial registros={registros} clientes={datos.clientes} filtro={filtro} onFiltro={setFiltro} onVolver={volver} onAbrir={abrir} />; break
     case 'recibo':
       if (abierto.tipo === 'gasto') vista = <ReciboGasto gasto={reg} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('gasto', id)} />
@@ -302,7 +305,7 @@ function Fila({ item, clientes = [], onAbrir }) {
   )
 }
 
-function Inicio({ yo, registros, clientes, onAccion, onCambiar, onAbrir, onVerTodo }) {
+function Inicio({ yo, registros, clientes, trabajos, onHoras, onAccion, onCambiar, onAbrir, onVerTodo }) {
   return (
     <main class="scr">
       <header class="top">
@@ -318,6 +321,7 @@ function Inicio({ yo, registros, clientes, onAccion, onCambiar, onAbrir, onVerTo
           </button>
         ))}
       </div>
+      {CONDUCTORES.includes(yo) && <MisHorasRenglon cuenta={cuentaConductor(trabajos, yo)} onAbrir={onHoras} />}
       <section class="last">
         <h2 class="lh">Lo último que se anotó</h2>
         {registros.length === 0 && <p class="vacio">Todavía no hay nada. Toque <b>Gasto</b> o <b>Trabajo</b> para anotar el primero.</p>}

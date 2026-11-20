@@ -291,7 +291,7 @@ export function ReciboCobro({ c, cliente, onVolver, onVerTrabajo }) {
 }
 
 // Lo que ven los dueños al tocar Trabajo: lo trabajado, día por día.
-export function Trabajados({ trabajos, clientes, filtro, onFiltro, onVolver, onAbrir }) {
+export function Trabajados({ trabajos, clientes, filtro, onFiltro, onVolver, onAbrir, onHoras }) {
   const conductores = [...new Set(trabajos.map((t) => t.conductor))]
   const lista = filtro === 'todos' ? trabajos : trabajos.filter((t) => t.conductor === filtro)
   const dias = []
@@ -305,6 +305,9 @@ export function Trabajados({ trabajos, clientes, filtro, onFiltro, onVolver, onA
   return (
     <main class="scr">
       <Encabezado titulo="Lo trabajado" onVolver={onVolver} />
+      <button type="button" class="enlace-horas" onClick={() => { vibrar(8); onHoras() }}>
+        <Icon name="clock-duotone" class="ic-s" /> Horas de los conductores <Icon name="caret-right-bold" class="ic-xs" />
+      </button>
       {conductores.length > 1 && (
         <div class="filtros">
           {['todos', ...conductores].map((c) => (

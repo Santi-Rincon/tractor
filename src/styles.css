@@ -270,3 +270,20 @@ h1, h2, p { margin: 0; }
 .limpiar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border-radius: 16px; color: var(--peligro); font-size: 16px; font-weight: 600; }
 .limpiar:active { background: #F6E3E0; }
 .limpiar.oculto { visibility: hidden; }
+
+/* Horas de los conductores */
+.mis-horas { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px 14px; border-radius: 18px; background: var(--tarjeta); text-align: left; border: 2px solid #E1ECE4; }
+.mis-horas:active { transform: scale(.98); }
+.mh-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #E1ECE4; color: var(--trabajo); flex: 0 0 auto; }
+.enlace-horas { align-self: flex-start; display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 12px; padding: 0 14px; border-radius: 999px; background: #E1ECE4; color: var(--trabajo); font-size: 16px; font-weight: 600; }
+.conductores { display: grid; gap: 10px; margin-top: 16px; }
+.conductores.n2 { grid-template-columns: 1fr 1fr; }
+.conductor { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px; border-radius: 20px; background: var(--tarjeta); text-align: left; border: 2px solid transparent; box-shadow: 0 1px 0 rgba(0,0,0,.06); }
+.conductor.on { border-color: var(--trabajo); background: #F1F6F2; }
+.cd-nombre { font-size: 20px; font-weight: 600; }
+.cd-cifras { font-size: 14px; color: var(--suave); }
+.cd-debe { font-size: 13px; color: var(--suave); margin-top: 8px; }
+.cd-valor { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--trabajo); }
+.mh-debe { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
+.mh-debe small { font-size: 12px; color: var(--suave); }
+.mh-debe b { font-size: 18px; font-weight: 600; color: var(--trabajo); font-variant-numeric: tabular-nums; }
