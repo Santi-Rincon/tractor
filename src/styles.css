@@ -267,7 +267,8 @@ h1, h2, p { margin: 0; }
 /* Valor con botón para dejarlo en cero */
 .monto .disp { max-width: 100%; }
 /* "Borrar todo" va como última fila del teclado, a todo lo ancho, discreto */
-.limpiar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border-radius: 16px; color: var(--peligro); font-size: 16px; font-weight: 600; }
+.limpiar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 8px; min-height: 50px; border-radius: 16px; color: var(--peligro); font-size: 18px; font-weight: 600; }
+.limpiar .ic-xs { width: 20px; height: 20px; }
 .limpiar:active { background: #F6E3E0; }
 .limpiar.oculto { visibility: hidden; }
 
@@ -276,14 +277,22 @@ h1, h2, p { margin: 0; }
 .mis-horas:active { transform: scale(.98); }
 .mh-ic { width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center; background: #E1ECE4; color: var(--trabajo); flex: 0 0 auto; }
 .enlace-horas { align-self: flex-start; display: flex; align-items: center; gap: 8px; min-height: 44px; margin-top: 12px; padding: 0 14px; border-radius: 999px; background: #E1ECE4; color: var(--trabajo); font-size: 16px; font-weight: 600; }
-.conductores { display: grid; gap: 10px; margin-top: 16px; }
-.conductores.n2 { grid-template-columns: 1fr 1fr; }
-.conductor { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; padding: 14px; border-radius: 20px; background: var(--tarjeta); text-align: left; border: 2px solid transparent; box-shadow: 0 1px 0 rgba(0,0,0,.06); }
-.conductor.on { border-color: var(--trabajo); background: #F1F6F2; }
-.cd-nombre { font-size: 20px; font-weight: 600; }
-.cd-cifras { font-size: 14px; color: var(--suave); }
-.cd-debe { font-size: 13px; color: var(--suave); margin-top: 8px; }
-.cd-valor { font-size: 24px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--trabajo); }
+/* Selector de conductor: dos botones grandes, el elegido relleno */
+.selector { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 16px; }
+.sel { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 60px; border-radius: 18px; font-size: 20px; font-weight: 600;
+  background: var(--tarjeta); color: var(--tinta); border: 2px solid #D3DACD; box-shadow: 0 4px 0 #D3DACD; transition: transform .1s ease, box-shadow .1s ease; }
+.sel:active { transform: translateY(3px); box-shadow: 0 1px 0 #D3DACD; }
+.sel.on { background: var(--trabajo); border-color: var(--trabajo); color: #fff; box-shadow: 0 4px 0 #173A25; }
+.sel-av { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; font-size: 16px; background: #E1ECE4; color: var(--trabajo); }
+.sel.on .sel-av { background: rgba(255,255,255,.2); color: #fff; }
+/* Tarjeta de lo que se le debe */
+.hero-horas { margin-top: 14px; padding: 18px 18px 16px; border-radius: 24px; background: var(--tarjeta); box-shadow: 0 1px 0 rgba(0,0,0,.06); display: flex; flex-direction: column; }
+.hh-quien { font-size: 17px; color: var(--suave); font-weight: 500; }
+.hh-valor { font-size: 46px; font-weight: 600; font-variant-numeric: tabular-nums; color: var(--trabajo); line-height: 1.15; margin: 2px 0 14px; }
+.hh-datos { display: grid; grid-template-columns: repeat(3, 1fr); border-top: 1.5px dashed var(--linea); padding-top: 12px; }
+.hh-datos span { display: flex; flex-direction: column; font-size: 14px; color: var(--suave); }
+.hh-datos span + span { padding-left: 12px; border-left: 1.5px solid var(--linea); }
+.hh-datos b { font-size: 19px; font-weight: 600; color: var(--tinta); font-variant-numeric: tabular-nums; }
 .mh-debe { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
 .mh-debe small { font-size: 12px; color: var(--suave); }
 .mh-debe b { font-size: 18px; font-weight: 600; color: var(--trabajo); font-variant-numeric: tabular-nums; }

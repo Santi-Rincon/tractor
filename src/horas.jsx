@@ -1,7 +1,7 @@
 import { Icon } from './Icon.jsx'
 import { Encabezado, Avatar, vibrar } from './comunes.jsx'
 import { plata, nombreDia } from './formato.js'
-import { CONDUCTORES, PAGO_CONDUCTOR_HORA, PAGO_CONDUCTOR_BULTO, labor, tiempo, cuentaConductor, ganadoConductor } from './reglas.js'
+import { CONDUCTORES, labor, tiempo, cuentaConductor, ganadoConductor } from './reglas.js'
 
 const cifras = (c) => [c.minutos ? tiempo(c.minutos) : '0 h', c.bultos ? `${c.bultos} bultos` : ''].filter(Boolean).join(' · ')
 
@@ -20,10 +20,11 @@ export function MisHorasRenglon({ cuenta, onAbrir }) {
 // Horas de los conductores. Los dueños ven a todos; el conductor solo lo suyo.
 export function Horas({ yo, trabajos, clientes, elegido, onElegir, onVolver, onAbrir }) {
   const esConductor = CONDUCTORES.includes(yo)
-  const verTodos = !esConductor || yo === 'Raúl'
-  const quienes = verTodos ? CONDUCTORES : [yo]
-  const actual = elegido && quienes.includes(elegido) ? elegido : (esConductor ? yo : quienes[0])
+  const quienes = !esConductor || yo === 'Raúl' ? CONDUCTORES : [yo]
   const cuentas = quienes.map((c) => cuentaConductor(trabajos, c))
+  // Sin elección: uno mismo si maneja; si no, el último que trabajó.
+  const porDefecto = esConductor ? yo : (trabajos.find((t) => quienes.includes(t.conductor))?.conductor ?? quienes[0])
+  const actual = elegido && quienes.includes(elegido) ? elegido : porDefecto
   const cuenta = cuentas.find((c) => c.conductor === actual)
 
   const dias = []
@@ -38,18 +39,28 @@ export function Horas({ yo, trabajos, clientes, elegido, onElegir, onVolver, onA
   return (
     <main class="scr">
       <Encabezado titulo={quienes.length === 1 ? 'Mis horas' : 'Horas de los conductores'} onVolver={onVolver} />
-      <div class={`conductores n${cuentas.length}`}>
-        {cuentas.map((c) => (
-          <button type="button" class={`conductor${c.conductor === actual ? ' on' : ''}`} aria-pressed={c.conductor === actual}
-            onClick={() => { vibrar(8); onElegir(c.conductor) }}>
-            <span class="cd-nombre">{c.conductor}</span>
-            <span class="cd-cifras">{cifras(c)}</span>
-            <span class="cd-debe">Se le debe</span>
-            <b class="cd-valor">{plata(c.ganado)}</b>
-          </button>
-        ))}
-      </div>
-      <p class="pista">{plata(PAGO_CONDUCTOR_HORA)} la hora y {plata(PAGO_CONDUCTOR_BULTO)} el bulto. Cuando se anoten los pagos al conductor, se irán restando.</p>
+      {quienes.length > 1 && (
+        <div class="selector" role="tablist" aria-label="Conductor">
+          {cuentas.map((c) => {
+            const on = c.conductor === actual
+            return (
+              <button type="button" role="tab" aria-selected={on} class={`sel${on ? ' on' : ''}`}
+                onClick={() => { vibrar(10); onElegir(c.conductor) }}>
+                <span class="sel-av">{c.conductor[0]}</span>{c.conductor}
+              </button>
+            )
+          })}
+        </div>
+      )}
+      <section class="hero-horas" aria-live="polite">
+        <span class="hh-quien">{actual} · se le debe</span>
+        <b class="hh-valor"><span class="cur">$</span>{plata(cuenta.ganado)}</b>
+        <div class="hh-datos">
+          <span><b>{cuenta.minutos ? tiempo(cuenta.minutos) : '0 h'}</b>trabajadas</span>
+          <span><b>{cuenta.bultos}</b>bultos</span>
+          <span><b>{cuenta.trabajos.length}</b>{cuenta.trabajos.length === 1 ? 'trabajo' : 'trabajos'}</span>
+        </div>
+      </section>
       {dias.length === 0 && <p class="vacio separado">{actual} todavía no tiene trabajos anotados.</p>}
       {dias.map((d) => (
         <section class="dia">
