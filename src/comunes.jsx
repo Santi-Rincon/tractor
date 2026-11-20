@@ -28,10 +28,17 @@ export function Encabezado({ titulo, onVolver }) {
   )
 }
 
-export function Monto({ valor, unidad = '$' }) {
+export function Monto({ valor, unidad = '$', onLimpiar }) {
   return (
-    <div class={`disp${valor ? '' : ' cero'}`} aria-live="polite">
-      {unidad === '$' && <span class="cur">$</span>}{plata(valor)}{unidad !== '$' && <span class="unidad"> {unidad}</span>}
+    <div class="monto">
+      <div class={`disp${valor ? '' : ' cero'}`} aria-live="polite">
+        {unidad === '$' && <span class="cur">$</span>}{plata(valor)}{unidad !== '$' && <span class="unidad"> {unidad}</span>}
+      </div>
+      {onLimpiar && valor > 0 && (
+        <button type="button" class="limpiar" onClick={() => { vibrar(10); onLimpiar() }}>
+          <Icon name="x-bold" class="ic-xs" /> Borrar todo
+        </button>
+      )}
     </div>
   )
 }
@@ -52,12 +59,17 @@ export function Teclado({ digitos, onDigitos, sinMiles }) {
   )
 }
 
-export function Atajos({ valores, actual, onElegir, etiqueta = mil, color = 'gasto' }) {
+// Tocar un atajo marcado lo desmarca y deja el valor en cero (salvo alternar={false}).
+export function Atajos({ valores, actual, onElegir, etiqueta = mil, color = 'gasto', alternar = true }) {
   return (
     <div class="chips">
-      {valores.map((a) => (
-        <button type="button" class={`chip ch-${color}${actual === a ? ' on' : ''}`} onClick={() => { vibrar(8); onElegir(a) }}>{etiqueta(a)}</button>
-      ))}
+      {valores.map((a) => {
+        const on = actual === a
+        return (
+          <button type="button" class={`chip ch-${color}${on ? ' on' : ''}`} aria-pressed={on}
+            onClick={() => { vibrar(8); onElegir(on && alternar ? 0 : a) }}>{etiqueta(a)}</button>
+        )
+      })}
     </div>
   )
 }

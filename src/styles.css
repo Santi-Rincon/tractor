@@ -100,8 +100,10 @@ h1, h2, p { margin: 0; }
 .disp.cero { color: #A9B2A7; }
 .cur { font-size: 28px; margin-right: 6px; color: var(--suave); }
 .chips { display: flex; gap: 8px; margin-bottom: 14px; }
-.chip { flex: 1; min-height: 48px; border-radius: 999px; background: var(--tarjeta); font-size: 17px; font-weight: 500; }
-.chip.on { background: var(--gasto); color: #fff; }
+.chip { flex: 1 1 0; max-width: 200px; min-height: 48px; padding: 0 14px; border-radius: 999px; background: var(--tarjeta); font-size: 17px; font-weight: 600; border: 2px solid #D3DACD; box-shadow: 0 3px 0 #D3DACD; transition: transform .1s ease, box-shadow .1s ease; }
+.chip:active { transform: translateY(2px); box-shadow: 0 1px 0 #D3DACD; }
+.chip.on { background: var(--gasto); border-color: var(--gasto); color: #fff; box-shadow: 0 3px 0 #5E3909; }
+.chip.ch-trabajo.on { box-shadow: 0 3px 0 #173A25; }
 .pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 14px; }
 .key {
   height: 58px; font-size: 27px; font-weight: 500; border-radius: 16px; background: var(--tarjeta);
@@ -204,7 +206,7 @@ h1, h2, p { margin: 0; }
 /* Color de cada acción dentro de su flujo */
 .c-trabajo b { color: var(--trabajo); } .c-plata b { color: var(--plata); }
 .p-trabajo i { background: var(--trabajo); }
-.chip.ch-trabajo.on { background: var(--trabajo); color: #fff; }
+.chip.ch-trabajo.on { background: var(--trabajo); border-color: var(--trabajo); color: #fff; }
 .respuesta.si.r-trabajo { background: var(--trabajo); }
 .burbuja.b-trabajo { background: #E1ECE4; color: var(--trabajo); }
 .burbuja.b-plata { background: #ECE6F5; color: var(--plata); }
@@ -261,3 +263,9 @@ h1, h2, p { margin: 0; }
 .av-m .insignia { width: 24px; height: 24px; }
 .ic-caja { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; }
 .dia-h.dos { flex-wrap: wrap; row-gap: 2px; }
+
+/* Valor con botón para dejarlo en cero */
+.monto { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 14px; min-height: 108px; }
+.monto .disp { margin-bottom: 4px; max-width: 100%; }
+.limpiar { align-self: flex-end; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: #F6E3E0; color: var(--peligro); font-size: 15px; font-weight: 600; }
+.limpiar:active { transform: scale(.96); }

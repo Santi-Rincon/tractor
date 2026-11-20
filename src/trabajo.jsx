@@ -127,7 +127,7 @@ export function Tiempo({ cliente, tipo, inicial, onVolver, onListo }) {
         <Paso etiqueta="Minutos" valor={m} unidad=" min" onMenos={() => cambiar(m === 0 && h === 0 ? 0 : -5)} onMas={() => cambiar(5)} />
       </div>
       <p class="sub-q">Precio de la hora</p>
-      <Atajos valores={PRECIOS_HORA} actual={precio} onElegir={setPrecio} color="trabajo" />
+      <Atajos valores={PRECIOS_HORA} actual={precio} onElegir={setPrecio} color="trabajo" alternar={false} />
       <div class="cuenta">
         <span>{tiempo(min)} × {plata(precio)}</span>
         <b>{plata(Math.round((min / 60) * precio))}</b>
@@ -146,7 +146,7 @@ export function Bultos({ cliente, inicial, onVolver, onListo }) {
     <main class="scr">
       <Barra titulo={<>Remolcada · <b>{cliente.nombre}</b></>} onVolver={onVolver} color="trabajo" />
       <h1 class="q">¿Cuántos bultos?</h1>
-      <Monto valor={bultos} unidad="bultos" />
+      <Monto valor={bultos} unidad="bultos" onLimpiar={() => setDigitos('')} />
       <div class="chips">
         {DISTANCIAS.map((x) => (
           <button type="button" class={`chip ch-trabajo dos-lineas${dist === x.id ? ' on' : ''}`} onClick={() => { vibrar(8); setDist(x.id) }}>
@@ -179,8 +179,8 @@ export function Valor({ cliente, pregunta, digitos, atajos, etiqueta, onDigitos,
     <main class="scr">
       <Barra titulo={T(cliente)} onVolver={onVolver} color="trabajo" />
       <h1 class="q">{pregunta}</h1>
-      <Monto valor={valor} />
-      <Atajos valores={atajos} actual={valor} etiqueta={etiqueta ?? mil} onElegir={(a) => onDigitos(String(a))} color="trabajo" />
+      <Monto valor={valor} onLimpiar={() => onDigitos('')} />
+      <Atajos valores={atajos} actual={valor} etiqueta={etiqueta ?? mil} onElegir={(a) => onDigitos(a ? String(a) : '')} color="trabajo" />
       <Teclado digitos={digitos} onDigitos={onDigitos} />
       <button type="button" class="primary" disabled={!valor} onClick={onListo}>Siguiente</button>
     </main>
