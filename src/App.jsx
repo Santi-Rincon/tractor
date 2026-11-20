@@ -2,12 +2,12 @@ import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
 import { cargar, guardarLista, guardarYo, guardarFoto, borrarFoto } from './store.js'
 import { plata, fechaLarga, saludo, cuando, nombreDia } from './formato.js'
-import { vibrar, nuevoId, Encabezado, ConfirmarBorrado } from './comunes.jsx'
+import { vibrar, nuevoId, Encabezado, ConfirmarBorrado, Avatar, COLORES_CLIENTE } from './comunes.jsx'
 import { CONDUCTORES, labor, totalTrabajo, tiempo } from './reglas.js'
 import { Categoria, Detalle, Cuanto, Foto, ReciboGasto, categoria } from './gasto.jsx'
 import {
   ElegirCliente, ClienteNuevo, ElegirVereda, ElegirLabor, Tiempo, Bultos, Pregunta, Valor,
-  Resumen, ListoTrabajo, ReciboTrabajo, ReciboCobro
+  Resumen, ListoTrabajo, ReciboTrabajo, ReciboCobro, Trabajados
 } from './trabajo.jsx'
 
 export const PERSONAS = ['Santiago', 'Raúl', 'Leo']
@@ -42,6 +42,7 @@ export function App() {
   const [ultimo, setUltimo] = useState(null)
   const [abierto, setAbierto] = useState(null)
   const [filtro, setFiltro] = useState('todo')
+  const [filtroConductor, setFiltroConductor] = useState('todos')
   const [aviso, setAviso] = useState('')
   const avisoTimer = useRef()
 
@@ -112,12 +113,12 @@ export function App() {
 
   // ---------- Trabajo ----------
   const empezarTrabajo = () => {
-    if (!CONDUCTORES.includes(yo)) return mostrarAviso('El trabajo lo anota quien manejó: Raúl o Leo.')
+    if (!CONDUCTORES.includes(yo)) return ir('trabajados')
     setBt(borradorTrabajo()); ir('t-cliente')
   }
   const crearCliente = async (nombre) => {
     const existente = datos.clientes.find((c) => c.nombre.toLowerCase() === nombre.toLowerCase())
-    const c = existente ?? { id: nuevoId(), nombre, vereda: '' }
+    const c = existente ?? { id: nuevoId(), nombre, vereda: '', color: datos.clientes.length % COLORES_CLIENTE.length }
     if (!existente) await actualizar({ clientes: [c, ...datos.clientes] })
     setBt((b) => ({ ...b, cliente: c })); ir('t-vereda')
   }
@@ -192,18 +193,19 @@ export function App() {
   let vista
   switch (pantalla) {
     case 'inicio': vista = (
-      <Inicio yo={yo} registros={registros} onAbrir={abrir} onVerTodo={() => ir('historial')} onCambiar={() => elegirPersona(null)}
+      <Inicio yo={yo} registros={registros} clientes={datos.clientes} onAbrir={abrir} onVerTodo={() => ir('historial')} onCambiar={() => elegirPersona(null)}
         onAccion={(a) => {
           if (a === 'gasto') { setBg(borradorGasto()); ir('g-categoria') }
           else if (a === 'trabajo') empezarTrabajo()
           else mostrarAviso(`${ACCIONES.find((x) => x.id === a).nombre} llega en la próxima versión`)
         }} />
     ); break
-    case 'historial': vista = <Historial registros={registros} filtro={filtro} onFiltro={setFiltro} onVolver={volver} onAbrir={abrir} />; break
+    case 'trabajados': vista = <Trabajados trabajos={datos.trabajos} clientes={datos.clientes} filtro={filtroConductor} onFiltro={setFiltroConductor} onVolver={volver} onAbrir={abrir} />; break
+    case 'historial': vista = <Historial registros={registros} clientes={datos.clientes} filtro={filtro} onFiltro={setFiltro} onVolver={volver} onAbrir={abrir} />; break
     case 'recibo':
       if (abierto.tipo === 'gasto') vista = <ReciboGasto gasto={reg} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('gasto', id)} />
-      else if (abierto.tipo === 'trabajo') vista = <ReciboTrabajo t={reg} cobro={datos.cobros.find((c) => c.trabajoId === reg.id)} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('trabajo', id)} />
-      else vista = <ReciboCobro c={reg} onVolver={volver} onVerTrabajo={() => abrir('trabajo', reg.trabajoId)} />
+      else if (abierto.tipo === 'trabajo') vista = <ReciboTrabajo t={reg} cliente={datos.clientes.find((c) => c.id === reg.clienteId)} cobro={datos.cobros.find((c) => c.trabajoId === reg.id)} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('trabajo', id)} />
+      else vista = <ReciboCobro c={reg} cliente={datos.clientes.find((c) => c.id === reg.clienteId)} onVolver={volver} onVerTrabajo={() => abrir('trabajo', reg.trabajoId)} />
       break
 
     case 'g-categoria': vista = <Categoria pasos={pasosGasto} onVolver={volver} onElegir={elegirCategoria} />; break
@@ -271,8 +273,9 @@ function Quien({ onElegir }) {
   )
 }
 
-function Fila({ item, onAbrir }) {
+function Fila({ item, clientes = [], onAbrir }) {
   const { tipo, r } = item
+  const cliente = r.clienteId && clientes.find((c) => c.id === r.clienteId)
   let icono, titulo, sub, valor, clase = ''
   if (tipo === 'gasto') {
     icono = categoria(r.categoria)?.icono ?? 'gas-pump-duotone'
@@ -289,7 +292,9 @@ function Fila({ item, onAbrir }) {
   }
   return (
     <button type="button" class="row" onClick={() => onAbrir(tipo, r.id)}>
-      <Icon name={icono} class={`ic-s i-${tipo}`} />
+      {tipo === 'gasto'
+        ? <span class="ic-caja"><Icon name={icono} class={`ic-s i-${tipo}`} /></span>
+        : <Avatar cliente={cliente} nombre={r.clienteNombre} tam="s" insignia={icono} />}
       <span class="rt"><b>{titulo}</b><small>{sub}</small></span>
       <span class={`amt${clase}`}>{plata(valor)}</span>
       <Icon name="caret-right-bold" class="ic-xs flecha" />
@@ -297,7 +302,7 @@ function Fila({ item, onAbrir }) {
   )
 }
 
-function Inicio({ yo, registros, onAccion, onCambiar, onAbrir, onVerTodo }) {
+function Inicio({ yo, registros, clientes, onAccion, onCambiar, onAbrir, onVerTodo }) {
   return (
     <main class="scr">
       <header class="top">
@@ -309,14 +314,14 @@ function Inicio({ yo, registros, onAccion, onCambiar, onAbrir, onVerTodo }) {
           <button type="button" class={`tile t-${a.id}`} onClick={() => { vibrar(10); onAccion(a.id) }}>
             <Icon name={a.icono} />
             <span class="tl">{a.nombre}</span>
-            <span class="th">{a.pista}</span>
+            <span class="th">{a.id === 'trabajo' && !CONDUCTORES.includes(yo) ? 'ver lo trabajado' : a.pista}</span>
           </button>
         ))}
       </div>
       <section class="last">
         <h2 class="lh">Lo último que se anotó</h2>
         {registros.length === 0 && <p class="vacio">Todavía no hay nada. Toque <b>Gasto</b> o <b>Trabajo</b> para anotar el primero.</p>}
-        {registros.slice(0, 3).map((it) => <Fila item={it} onAbrir={onAbrir} />)}
+        {registros.slice(0, 3).map((it) => <Fila item={it} clientes={clientes} onAbrir={onAbrir} />)}
         {registros.length > 0 && (
           <button type="button" class="ver-todo" onClick={onVerTodo}>
             Ver todo{registros.length > 3 ? ` (${registros.length})` : ''} <Icon name="caret-right-bold" class="ic-xs" />
@@ -329,7 +334,7 @@ function Inicio({ yo, registros, onAccion, onCambiar, onAbrir, onVerTodo }) {
 
 const RESUMEN_DIA = { gasto: 'Gastado', trabajo: 'Trabajado', cobro: 'Recibido' }
 
-function Historial({ registros, filtro, onFiltro, onVolver, onAbrir }) {
+function Historial({ registros, clientes, filtro, onFiltro, onVolver, onAbrir }) {
   const lista = filtro === 'todo' ? registros : registros.filter((x) => x.tipo === filtro)
   const dias = []
   for (const it of lista) {
@@ -351,7 +356,7 @@ function Historial({ registros, filtro, onFiltro, onVolver, onAbrir }) {
       {dias.map((d) => (
         <section class="dia">
           <header class="dia-h"><h2>{d.nombre}</h2>{filtro !== 'todo' && <span>{RESUMEN_DIA[filtro]} <b>{plata(d.total)}</b></span>}</header>
-          {d.items.map((it) => <Fila item={it} onAbrir={onAbrir} />)}
+          {d.items.map((it) => <Fila item={it} clientes={clientes} onAbrir={onAbrir} />)}
         </section>
       ))}
     </main>

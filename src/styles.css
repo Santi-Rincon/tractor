@@ -247,3 +247,17 @@ h1, h2, p { margin: 0; }
 .filtro { flex: 0 0 auto; min-height: 44px; padding: 0 14px; border-radius: 999px; background: var(--tarjeta); font-size: 16px; font-weight: 500; }
 .filtro.on { color: #fff; background: var(--tinta); }
 .filtro.f-gasto.on { background: var(--gasto); } .filtro.f-trabajo.on { background: var(--trabajo); } .filtro.f-cobro.on { background: var(--plata); }
+
+/* Ningún bloque de la pantalla se encoge cuando la lista es larga */
+.scr > * { flex-shrink: 0; }
+.scr > .sp, .scr > .si-no { flex-shrink: 1; }
+
+/* Avatar de cliente: iniciales sobre su color */
+.avatar { position: relative; display: grid; place-items: center; flex: 0 0 auto; border-radius: 50%; color: #fff; font-weight: 600; letter-spacing: .02em; }
+.av-m { width: 52px; height: 52px; font-size: 19px; }
+.av-s { width: 40px; height: 40px; font-size: 15px; }
+.insignia { position: absolute; right: -4px; bottom: -4px; width: 22px; height: 22px; border-radius: 50%; background: var(--tarjeta); color: var(--tinta); display: grid; place-items: center; box-shadow: 0 0 0 2px var(--tarjeta); }
+.insignia .ic-xs { width: 15px; height: 15px; }
+.av-m .insignia { width: 24px; height: 24px; }
+.ic-caja { width: 40px; height: 40px; display: grid; place-items: center; flex: 0 0 auto; }
+.dia-h.dos { flex-wrap: wrap; row-gap: 2px; }

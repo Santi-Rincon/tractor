@@ -89,3 +89,29 @@ export function ConfirmarBorrado({ que = 'este gasto', onSi, onNo }) {
     </div>
   )
 }
+
+// Cada cliente tiene su color fijo, como los contactos de WhatsApp.
+export const COLORES_CLIENTE = ['#A23B5A', '#2E6F7E', '#7A5C1E', '#3D4F8C', '#8C3D2B', '#1F6F5C', '#6E3F7A', '#4F6B2A', '#9A4A16', '#4A5560']
+
+export function colorCliente(c) {
+  if (!c) return COLORES_CLIENTE[9]
+  if (Number.isInteger(c.color)) return COLORES_CLIENTE[c.color % COLORES_CLIENTE.length]
+  let h = 0
+  for (const ch of c.id ?? c.nombre ?? '') h = (h * 31 + ch.charCodeAt(0)) >>> 0
+  return COLORES_CLIENTE[h % COLORES_CLIENTE.length]
+}
+
+export function iniciales(nombre = '') {
+  const partes = nombre.replace(/^(don|doña|dona|señor|señora|sr\.?|sra\.?)\s+/i, '').trim().split(/\s+/)
+  return ((partes[0]?.[0] ?? '') + (partes[1]?.[0] ?? '')).toUpperCase() || '?'
+}
+
+export function Avatar({ cliente, nombre, tam = 'm', insignia }) {
+  const n = cliente?.nombre ?? nombre
+  return (
+    <span class={`avatar av-${tam}`} style={{ background: colorCliente(cliente ?? { nombre: n }) }} aria-hidden="true">
+      {iniciales(n)}
+      {insignia && <span class="insignia"><Icon name={insignia} class="ic-xs" /></span>}
+    </span>
+  )
+}

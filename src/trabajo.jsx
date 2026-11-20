@@ -1,7 +1,7 @@
 import { useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
-import { Barra, Monto, Teclado, Atajos, SiNo, ConfirmarBorrado, vibrar, mil } from './comunes.jsx'
-import { plata, fechaLarga, hora } from './formato.js'
+import { Barra, Monto, Teclado, Atajos, SiNo, ConfirmarBorrado, Avatar, Encabezado, vibrar, mil } from './comunes.jsx'
+import { plata, fechaLarga, hora, nombreDia as nombreDiaCorto } from './formato.js'
 import { LABORES, DISTANCIAS, PRECIOS_HORA, labor, valorLabor, totalTrabajo, tiempo, resumenLabor } from './reglas.js'
 
 const T = (cliente) => cliente ? <>Trabajo · <b>{cliente.nombre}</b></> : <b>Trabajo</b>
@@ -22,7 +22,7 @@ export function ElegirCliente({ clientes, onVolver, onElegir, onNuevo }) {
         </button>
         {lista.map((c) => (
           <button type="button" class="opcion con-icono" onClick={() => { vibrar(10); onElegir(c) }}>
-            <span class="burbuja b-trabajo"><Icon name="user-duotone" /></span>
+            <Avatar cliente={c} />
             <span class="op-txt">{c.nombre}{c.vereda && <small>{c.vereda}</small>}</span>
           </button>
         ))}
@@ -207,7 +207,7 @@ export function Resumen({ t, pago, onVolver, onGuardar }) {
       <Barra titulo={T(t.cliente)} onVolver={onVolver} color="trabajo" />
       <h1 class="q">Revise antes de guardar</h1>
       <article class="recibo plano">
-        <div class="r-top"><span class="burbuja b-trabajo"><Icon name="tractor-duotone" /></span>
+        <div class="r-top"><Avatar cliente={t.cliente} />
           <span class="r-tipo">{t.cliente.nombre}{t.vereda && <small>{t.vereda}</small>}</span></div>
         <Cuenta t={t} pago={pago} />
       </article>
@@ -238,7 +238,7 @@ export function ListoTrabajo({ t, pago, onInicio, onDeshacer }) {
   )
 }
 
-export function ReciboTrabajo({ t, cobro, yo, onVolver, onBorrar }) {
+export function ReciboTrabajo({ t, cliente, cobro, yo, onVolver, onBorrar }) {
   const [confirmando, setConfirmando] = useState(false)
   return (
     <main class="scr">
@@ -247,7 +247,7 @@ export function ReciboTrabajo({ t, cobro, yo, onVolver, onBorrar }) {
         <span class="crumb c-trabajo"><b>Recibo de trabajo</b></span>
       </div>
       <article class="recibo">
-        <div class="r-top"><span class="burbuja b-trabajo"><Icon name="tractor-duotone" /></span>
+        <div class="r-top"><Avatar cliente={cliente} nombre={t.clienteNombre} insignia="tractor-duotone" />
           <span class="r-tipo">{t.clienteNombre}{t.vereda && <small>{t.vereda}</small>}</span></div>
         <div class="r-valor"><span class="cur">$</span>{plata(totalTrabajo(t))}</div>
         <Cuenta t={t} pago={cobro?.valor ?? 0} />
@@ -267,7 +267,7 @@ export function ReciboTrabajo({ t, cobro, yo, onVolver, onBorrar }) {
   )
 }
 
-export function ReciboCobro({ c, onVolver, onVerTrabajo }) {
+export function ReciboCobro({ c, cliente, onVolver, onVerTrabajo }) {
   return (
     <main class="scr">
       <div class="bar">
@@ -275,7 +275,7 @@ export function ReciboCobro({ c, onVolver, onVerTrabajo }) {
         <span class="crumb c-plata"><b>Recibo de pago</b></span>
       </div>
       <article class="recibo">
-        <div class="r-top"><span class="burbuja b-plata"><Icon name="hand-coins-duotone" /></span><span class="r-tipo">{c.clienteNombre} pagó</span></div>
+        <div class="r-top"><Avatar cliente={cliente} nombre={c.clienteNombre} insignia="hand-coins-duotone" /><span class="r-tipo">{c.clienteNombre} pagó</span></div>
         <div class="r-valor"><span class="cur">$</span>{plata(c.valor)}</div>
         <dl class="r-filas">
           <div><dt>Quién pagó</dt><dd>{c.clienteNombre}</dd></div>
@@ -286,6 +286,53 @@ export function ReciboCobro({ c, onVolver, onVerTrabajo }) {
       </article>
       <div class="sp" />
       {c.trabajoId && <button type="button" class="ghost" onClick={onVerTrabajo}>Ver el trabajo de este pago</button>}
+    </main>
+  )
+}
+
+// Lo que ven los dueños al tocar Trabajo: lo trabajado, día por día.
+export function Trabajados({ trabajos, clientes, filtro, onFiltro, onVolver, onAbrir }) {
+  const conductores = [...new Set(trabajos.map((t) => t.conductor))]
+  const lista = filtro === 'todos' ? trabajos : trabajos.filter((t) => t.conductor === filtro)
+  const dias = []
+  for (const t of lista) {
+    const clave = new Date(t.fecha).toDateString()
+    let d = dias.find((x) => x.clave === clave)
+    if (!d) { d = { clave, fecha: t.fecha, minutos: 0, bultos: 0, total: 0, items: [] }; dias.push(d) }
+    d.items.push(t); d.total += totalTrabajo(t)
+    for (const l of t.labores) l.tipo === 'remolcada' ? (d.bultos += l.bultos) : (d.minutos += l.minutos)
+  }
+  return (
+    <main class="scr">
+      <Encabezado titulo="Lo trabajado" onVolver={onVolver} />
+      {conductores.length > 1 && (
+        <div class="filtros">
+          {['todos', ...conductores].map((c) => (
+            <button type="button" class={`filtro f-trabajo${filtro === c ? ' on' : ''}`} onClick={() => { vibrar(8); onFiltro(c) }}>{c === 'todos' ? 'Todos' : c}</button>
+          ))}
+        </div>
+      )}
+      {dias.length === 0 && <p class="vacio separado">Todavía no se ha anotado ningún trabajo. Lo anota quien maneja (Raúl o Leo) desde su celular.</p>}
+      {dias.map((d) => (
+        <section class="dia">
+          <header class="dia-h dos">
+            <h2>{nombreDiaCorto(d.fecha)}</h2>
+            <span>{[d.minutos ? tiempo(d.minutos) : '', d.bultos ? `${d.bultos} bultos` : ''].filter(Boolean).join(' · ')} · <b>{plata(d.total)}</b></span>
+          </header>
+          {d.items.map((t) => {
+            const l = t.labores[0]
+            const detalle = t.labores.map((x) => x.tipo === 'remolcada' ? `${x.bultos} bultos` : `${labor(x.tipo).nombre} ${tiempo(x.minutos)}`).join(' + ')
+            return (
+              <button type="button" class="row" onClick={() => onAbrir('trabajo', t.id)}>
+                <Avatar cliente={clientes.find((c) => c.id === t.clienteId)} nombre={t.clienteNombre} tam="s" />
+                <span class="rt"><b>{t.clienteNombre}</b><small>{detalle} · {t.conductor}{t.vereda ? ` · ${t.vereda}` : ''}</small></span>
+                <span class="amt">{plata(totalTrabajo(t))}</span>
+                <Icon name="caret-right-bold" class="ic-xs flecha" />
+              </button>
+            )
+          })}
+        </section>
+      ))}
     </main>
   )
 }
