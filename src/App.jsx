@@ -292,18 +292,9 @@ function Listo({ gasto, yo, onInicio, onDeshacer }) {
       <h1 class="ok-t">Quedó anotado</h1>
       <p class="sent">{yo}, usted pagó <b>{plata(gasto.valor)}</b> de <b>{gasto.nombre}</b> hoy.</p>
       <div class="sp" />
-      {confirmando ? (
-        <div class="confirma" role="alertdialog" aria-label="Confirmar borrado">
-          <p>¿Seguro que quiere borrar este gasto?</p>
-          <button type="button" class="primary peligro" onClick={onDeshacer}>Sí, borrarlo</button>
-          <button type="button" class="ghost" onClick={() => setConfirmando(false)}>No, dejarlo</button>
-        </div>
-      ) : (
-        <>
-          <button type="button" class="primary" onClick={onInicio}>Volver al inicio</button>
-          <button type="button" class="ghost" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="arrow-counter-clockwise-bold" class="ic-s" /> Deshacer</button>
-        </>
-      )}
+      <button type="button" class="primary" onClick={onInicio}>Volver al inicio</button>
+      <button type="button" class="ghost" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="arrow-counter-clockwise-bold" class="ic-s" /> Deshacer</button>
+      {confirmando && <ConfirmarBorrado onSi={onDeshacer} onNo={() => setConfirmando(false)} />}
     </main>
   )
 }
@@ -342,16 +333,14 @@ function Foto({ paso, pasos, onVolver, onGuardar }) {
           <button type="button" class="primary" disabled={estado === 'Guardando…'} onClick={() => guardar(true)}>Guardar</button>
         </>
       ) : (
-        <>
-          <div class="lista-grande">
-            <button type="button" class="opcion con-icono" onClick={tomar}>
-              <span class="burbuja"><Icon name="camera-duotone" /></span>Tomar foto
-            </button>
-            <button type="button" class="opcion con-icono" disabled={Boolean(estado)} onClick={() => guardar(false)}>
-              <span class="burbuja neutra"><Icon name="check-bold" /></span>Guardar sin foto
-            </button>
-          </div>
-        </>
+        <div class="si-no">
+          <button type="button" class="respuesta si" disabled={Boolean(estado)} onClick={tomar}>
+            <Icon name="camera-duotone" class="ic-r" /><b>Sí</b><span>tomar foto</span>
+          </button>
+          <button type="button" class="respuesta no" disabled={Boolean(estado)} onClick={() => guardar(false)}>
+            <Icon name="x-bold" class="ic-r" /><b>No</b><span>guardar sin foto</span>
+          </button>
+        </div>
       )}
       {estado && <p class="pista" role="status">{estado}</p>}
     </main>
@@ -416,22 +405,30 @@ function Recibo({ gasto, yo, onVolver, onBorrar }) {
           : <p class="r-sin">Sin foto de la factura</p>}
       </article>
       <div class="sp" />
-      {autor === yo ? (
-        confirmando ? (
-          <div class="confirma" role="alertdialog" aria-label="Confirmar borrado">
-            <p>¿Seguro que quiere borrar este gasto?</p>
-            <button type="button" class="primary peligro" onClick={() => onBorrar(gasto.id)}>Sí, borrarlo</button>
-            <button type="button" class="ghost" onClick={() => setConfirmando(false)}>No, dejarlo</button>
-          </div>
-        ) : (
-          <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este gasto</button>
-        )
-      ) : <p class="pista centro">Solo {autor} puede borrarlo.</p>}
+      {autor === yo
+        ? <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este gasto</button>
+        : <p class="pista centro">Solo {autor} puede borrarlo.</p>}
+      {confirmando && <ConfirmarBorrado onSi={() => onBorrar(gasto.id)} onNo={() => setConfirmando(false)} />}
       {grande && (
         <button type="button" class="foto-grande" onClick={() => setGrande(false)} aria-label="Cerrar foto">
           <img src={url} alt="Foto de la factura" /><span class="cerrar"><Icon name="x-bold" class="ic-s" /> Cerrar</span>
         </button>
       )}
     </main>
+  )
+}
+
+function ConfirmarBorrado({ onSi, onNo }) {
+  return (
+    <div class="velo" onClick={onNo}>
+      <div class="hoja" role="alertdialog" aria-modal="true" aria-label="Confirmar borrado" onClick={(e) => e.stopPropagation()}>
+        <Icon name="trash-bold" class="ic hoja-ic" />
+        <p>¿Seguro que quiere borrar este gasto?</p>
+        <div class="hoja-botones">
+          <button type="button" class="boton no-borrar" onClick={onNo}>No, dejarlo</button>
+          <button type="button" class="boton si-borrar" onClick={onSi}>Sí, borrar</button>
+        </div>
+      </div>
+    </div>
   )
 }
