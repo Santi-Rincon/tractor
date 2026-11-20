@@ -1,21 +1,24 @@
-import { get, set, del } from 'idb-keyval'
+import { get, set, del, getMany } from 'idb-keyval'
 
 // Las primeras pruebas usaban "Papá" y "Padrino"; se pasan a los nombres reales.
 const RENOMBRES = { 'Papá': 'Santiago', 'Padrino': 'Raúl' }
+const LISTAS = ['gastos', 'trabajos', 'cobros', 'clientes']
 
 export async function cargar() {
-  const [yoGuardado, gastosGuardados] = await Promise.all([get('yo'), get('gastos')])
+  const [yoGuardado, ...listas] = await getMany(['yo', ...LISTAS])
   const yo = RENOMBRES[yoGuardado] ?? yoGuardado ?? null
-  const gastos = (gastosGuardados ?? []).map((g) => RENOMBRES[g.pagadoPor] ? { ...g, pagadoPor: RENOMBRES[g.pagadoPor] } : g)
   if (yo !== yoGuardado) await set('yo', yo)
-  if (gastos.some((g, i) => g !== gastosGuardados[i])) await set('gastos', gastos)
-  return { yo, gastos }
+  const datos = { yo }
+  LISTAS.forEach((k, i) => { datos[k] = listas[i] ?? [] })
+  const gastos = datos.gastos.map((g) => RENOMBRES[g.pagadoPor] ? { ...g, pagadoPor: RENOMBRES[g.pagadoPor] } : g)
+  if (gastos.some((g, i) => g !== datos.gastos[i])) { datos.gastos = gastos; await set('gastos', gastos) }
+  return datos
 }
 
 export const guardarYo = (yo) => set('yo', yo)
-export const guardarGastos = (gastos) => set('gastos', gastos)
+export const guardarLista = (clave, lista) => set(clave, lista)
 
-// Las fotos van aparte para que la lista de gastos cargue liviana.
+// Las fotos van aparte para que las listas carguen livianas.
 export const guardarFoto = (id, blob) => set(`foto:${id}`, blob)
 export const leerFoto = (id) => get(`foto:${id}`)
 export const borrarFoto = (id) => del(`foto:${id}`)

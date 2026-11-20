@@ -1,0 +1,91 @@
+import { Icon } from './Icon.jsx'
+import { plata } from './formato.js'
+
+export const vibrar = (ms) => { try { navigator.vibrate?.(ms) } catch {} }
+export const nuevoId = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`
+export const mil = (n) => `${n / 1000} mil`
+const MAX_DIGITOS = 9
+
+export function Barra({ titulo, paso, pasos, onVolver, color = 'gasto' }) {
+  return (
+    <>
+      <div class="bar">
+        <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
+        <span class={`crumb c-${color}`}>{titulo}</span>
+        {pasos && <span class="step">{paso} de {pasos}</span>}
+      </div>
+      {pasos && <div class={`prog p-${color}`}><i style={{ width: `${(paso / (pasos + 1)) * 100}%` }} /></div>}
+    </>
+  )
+}
+
+export function Encabezado({ titulo, onVolver }) {
+  return (
+    <div class="bar">
+      <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
+      <span class="crumb"><b class="neutro">{titulo}</b></span>
+    </div>
+  )
+}
+
+export function Monto({ valor, unidad = '$' }) {
+  return (
+    <div class={`disp${valor ? '' : ' cero'}`} aria-live="polite">
+      {unidad === '$' && <span class="cur">$</span>}{plata(valor)}{unidad !== '$' && <span class="unidad"> {unidad}</span>}
+    </div>
+  )
+}
+
+export function Teclado({ digitos, onDigitos, sinMiles }) {
+  const tecla = (k) => {
+    vibrar(8)
+    if (k === 'borrar') return onDigitos(digitos.slice(0, -1))
+    const siguiente = (digitos + k).replace(/^0+/, '')
+    if (siguiente.length <= MAX_DIGITOS) onDigitos(siguiente)
+  }
+  const teclas = ['1', '2', '3', '4', '5', '6', '7', '8', '9', sinMiles ? '' : '000', '0']
+  return (
+    <div class="pad">
+      {teclas.map((k) => k ? <button type="button" class="key" onClick={() => tecla(k)}>{k}</button> : <span />)}
+      <button type="button" class="key" aria-label="Borrar" onClick={() => tecla('borrar')}><Icon name="backspace-duotone" class="ic-s" /></button>
+    </div>
+  )
+}
+
+export function Atajos({ valores, actual, onElegir, etiqueta = mil, color = 'gasto' }) {
+  return (
+    <div class="chips">
+      {valores.map((a) => (
+        <button type="button" class={`chip ch-${color}${actual === a ? ' on' : ''}`} onClick={() => { vibrar(8); onElegir(a) }}>{etiqueta(a)}</button>
+      ))}
+    </div>
+  )
+}
+
+export function SiNo({ si, no, iconoSi = 'check-bold', color = 'gasto', onSi, onNo, deshabilitado }) {
+  return (
+    <div class="si-no">
+      <button type="button" class={`respuesta si r-${color}`} disabled={deshabilitado} onClick={() => { vibrar(10); onSi() }}>
+        <Icon name={iconoSi} class="ic-r" /><b>Sí</b><span>{si}</span>
+      </button>
+      <button type="button" class="respuesta no" disabled={deshabilitado} onClick={() => { vibrar(10); onNo() }}>
+        <Icon name="x-bold" class="ic-r" /><b>No</b><span>{no}</span>
+      </button>
+    </div>
+  )
+}
+
+export function ConfirmarBorrado({ que = 'este gasto', onSi, onNo }) {
+  return (
+    <div class="velo" onClick={onNo}>
+      <div class="hoja" role="alertdialog" aria-modal="true" aria-label="Confirmar borrado" onClick={(e) => e.stopPropagation()}>
+        <Icon name="trash-bold" class="ic hoja-ic" />
+        <p>¿Seguro que quiere borrar {que}?</p>
+        <div class="hoja-botones">
+          <button type="button" class="boton no-borrar" onClick={onNo}>No, dejarlo</button>
+          <button type="button" class="boton si-borrar" onClick={onSi}>Sí, borrar</button>
+        </div>
+      </div>
+    </div>
+  )
+}
