@@ -3,7 +3,7 @@ import { Icon } from './Icon.jsx'
 import { cargar, guardarGastos, guardarYo } from './store.js'
 import { plata, fechaLarga, saludo, cuando } from './formato.js'
 
-const PERSONAS = ['Papá', 'Padrino', 'Leo']
+export const PERSONAS = ['Santiago', 'Raúl', 'Leo']
 
 const CATEGORIAS = [
   { id: 'acpm', nombre: 'ACPM', icono: 'gas-pump-duotone', atajos: [50000, 80000, 100000] },
