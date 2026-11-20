@@ -2,7 +2,8 @@ import { useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
 import { Barra, Encabezado, Monto, Teclado, Atajos, Avatar, ConfirmarBorrado, vibrar } from './comunes.jsx'
 import { plata, fechaLarga, hora, nombreDia } from './formato.js'
-import { totalTrabajo, labor, tiempo } from './reglas.js'
+import { totalTrabajo, labor, tiempo, estadoTrabajos } from './reglas.js'
+import { Sello } from './trabajo.jsx'
 
 // Pantalla de Plata: las dos acciones arriba y, debajo, quién debe.
 export function PlataInicio({ deudas, conductores, onCobrar, onPagarConductor, onCliente, onConductor, onVolver, yoConductorSolo }) {
@@ -72,13 +73,16 @@ export function CuentaCliente({ d, onVolver, onAbrir, onCobrar }) {
     ...d.trabajos.map((t) => ({ tipo: 'trabajo', r: t, fecha: t.fecha })),
     ...d.pagos.map((p) => ({ tipo: 'cobro', r: p, fecha: p.fecha }))
   ].sort((a, b) => b.fecha.localeCompare(a.fecha))
+  const estado = estadoTrabajos(d.trabajos, d.pagos)
+  const ultimoPago = d.pagos.reduce((m, p) => (!m || p.fecha > m ? p.fecha : m), null)
   return (
     <main class="scr">
       <Encabezado titulo="Cuenta del cliente" onVolver={onVolver} />
-      <section class="hero-horas">
+      <section class="hero-horas con-sello">
         <div class="r-top"><Avatar cliente={d.cliente} /><span class="r-tipo">{d.cliente.nombre}{d.cliente.vereda && <small>{d.cliente.vereda}</small>}</span></div>
         <span class="hh-quien espacio">{d.debe > 0 ? 'Debe' : d.debe < 0 ? 'Tiene a favor' : 'Está a paz y salvo'}</span>
         {d.debe !== 0 && <b class={`hh-valor${d.debe > 0 ? ' rojo' : ''}`}><span class="cur">$</span>{plata(Math.abs(d.debe))}</b>}
+        {d.debe <= 0 && d.trabajos.length > 0 && <Sello texto="Paz y salvo" fecha={ultimoPago} />}
         <div class="hh-datos dos">
           <span><b>{plata(d.trabajado)}</b>trabajado</span>
           <span><b>{plata(d.pagado)}</b>pagado</span>
@@ -87,7 +91,7 @@ export function CuentaCliente({ d, onVolver, onAbrir, onCobrar }) {
       {movs.map((m) => m.tipo === 'trabajo' ? (
         <button type="button" class="row mov" onClick={() => onAbrir('trabajo', m.r.id)}>
           <span class="ic-caja"><Icon name="tractor-duotone" class="ic-s i-trabajo" /></span>
-          <span class="rt"><b>{m.r.labores.map((l) => l.tipo === 'remolcada' ? `${l.bultos} bultos` : `${labor(l.tipo).nombre} ${tiempo(l.minutos)}`).join(' + ')}</b><small>{nombreDia(m.r.fecha)} · {m.r.conductor}</small></span>
+          <span class="rt"><b>{m.r.labores.map((l) => l.tipo === 'remolcada' ? `${l.bultos} bultos` : `${labor(l.tipo).nombre} ${tiempo(l.minutos)}`).join(' + ')}</b><small>{nombreDia(m.r.fecha)} · {m.r.conductor}{estado[m.r.id]?.pagado ? <span class="tag-pagado">Pagado</span> : ''}</small></span>
           <span class="amt">+ {plata(totalTrabajo(m.r))}</span>
           <Icon name="caret-right-bold" class="ic-xs flecha" />
         </button>

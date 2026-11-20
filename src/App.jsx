@@ -3,7 +3,7 @@ import { Icon } from './Icon.jsx'
 import { cargar, guardarLista, guardarYo, guardarFoto, borrarFoto } from './store.js'
 import { plata, fechaLarga, saludo, cuando, nombreDia } from './formato.js'
 import { vibrar, nuevoId, Encabezado, ConfirmarBorrado, Avatar, COLORES_CLIENTE } from './comunes.jsx'
-import { CONDUCTORES, labor, totalTrabajo, tiempo, cuentaConductor, deudas } from './reglas.js'
+import { CONDUCTORES, labor, totalTrabajo, tiempo, cuentaConductor, deudas, estadoTrabajos } from './reglas.js'
 import { PlataInicio, ElegirDeudor, CuentaCliente, ValorPlata, ElegirConductor, ListoPlata, ReciboPago } from './plata.jsx'
 import { Horas, MisHorasRenglon } from './horas.jsx'
 import { Categoria, Detalle, Cuanto, Foto, ReciboGasto, categoria } from './gasto.jsx'
@@ -241,7 +241,7 @@ export function App() {
     case 'historial': vista = <Historial registros={registros} clientes={datos.clientes} filtro={filtro} onFiltro={setFiltro} onVolver={volver} onAbrir={abrir} />; break
     case 'recibo':
       if (abierto.tipo === 'gasto') vista = <ReciboGasto gasto={reg} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('gasto', id)} />
-      else if (abierto.tipo === 'trabajo') vista = <ReciboTrabajo t={reg} cliente={datos.clientes.find((c) => c.id === reg.clienteId)} cobro={datos.cobros.find((c) => c.trabajoId === reg.id)} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('trabajo', id)} />
+      else if (abierto.tipo === 'trabajo') vista = <ReciboTrabajo t={reg} estado={estadoTrabajos(datos.trabajos, datos.cobros)[reg.id]} cliente={datos.clientes.find((c) => c.id === reg.clienteId)} cobro={datos.cobros.find((c) => c.trabajoId === reg.id)} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('trabajo', id)} />
       else if (abierto.tipo === 'pago') vista = <ReciboPago p={reg} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('pago', id)} />
       else vista = <ReciboCobro c={reg} cliente={datos.clientes.find((c) => c.id === reg.clienteId)} yo={yo} onVolver={volver} onVerTrabajo={() => abrir('trabajo', reg.trabajoId)} onBorrar={(id) => borrarDesdeRecibo('cobro', id)} />
       break

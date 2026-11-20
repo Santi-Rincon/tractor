@@ -325,3 +325,20 @@ h1, h2, p { margin: 0; }
 .row.mov { margin-top: 8px; }
 .primary.morado { background: var(--plata); }
 .badge.morado { background: var(--plata); }
+
+/* Sello de pagado: tinta verde, doble borde, girado y un poco gastado */
+.recibo, .hero-horas.con-sello { position: relative; }
+.sello {
+  align-self: center; margin: 18px auto 16px; pointer-events: none;
+  display: flex; width: max-content; flex-direction: column; align-items: center; gap: 2px;
+  padding: 8px 14px 7px; border: 3px solid var(--trabajo); border-radius: 12px;
+  outline: 1.5px solid var(--trabajo); outline-offset: 3px;
+  color: var(--trabajo); transform: rotate(-11deg); opacity: .88;
+  -webkit-mask-image: radial-gradient(circle at 30% 40%, #000 55%, rgba(0,0,0,.72) 78%, #000 100%);
+          mask-image: radial-gradient(circle at 30% 40%, #000 55%, rgba(0,0,0,.72) 78%, #000 100%);
+  animation: sellar .45s cubic-bezier(.2,1.4,.4,1) .15s both;
+}
+.sello-txt { font-size: 21px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; line-height: 1; }
+.sello-fecha { font-size: 12px; font-weight: 600; letter-spacing: .12em; padding-top: 3px; border-top: 1.5px solid currentColor; }
+@keyframes sellar { 0% { transform: rotate(-11deg) scale(1.9); opacity: 0; } 70% { opacity: .95; } 100% { transform: rotate(-11deg) scale(1); opacity: .88; } }
+.tag-pagado { display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: 6px; border: 1.5px solid var(--trabajo); color: var(--trabajo); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 1px; }

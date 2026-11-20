@@ -58,7 +58,7 @@ export function ElegirVereda({ cliente, veredas, onVolver, onElegir }) {
       <h1 class="q">¿En qué vereda?</h1>
       {otra || orden.length === 0 ? (
         <>
-          <input class="campo c-foco-trabajo" type="text" value={texto} autocapitalize="words" autofocus enterkeyhint="next"
+          <input class="campo c-foco-trabajo" type="text" value={texto} autocapitalize="words" autofocus={otra} enterkeyhint="next"
             placeholder="Nombre de la vereda" onInput={(e) => setTexto(e.currentTarget.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && texto.trim()) onElegir(texto.trim()) }} />
           <div class="sp" />
@@ -265,7 +265,7 @@ export function ListoTrabajo({ t, pago, onInicio, onDeshacer }) {
   )
 }
 
-export function ReciboTrabajo({ t, cliente, cobro, yo, onVolver, onBorrar }) {
+export function ReciboTrabajo({ t, cliente, cobro, estado, yo, onVolver, onBorrar }) {
   const [confirmando, setConfirmando] = useState(false)
   return (
     <main class="scr">
@@ -278,6 +278,7 @@ export function ReciboTrabajo({ t, cliente, cobro, yo, onVolver, onBorrar }) {
           <span class="r-tipo">{t.clienteNombre}{t.vereda && <small>{t.vereda}</small>}</span></div>
         <div class="r-valor"><span class="cur">$</span>{plata(totalTrabajo(t))}</div>
         <Cuenta t={t} pago={cobro?.valor ?? 0} />
+        {estado?.pagado && <Sello texto="Pagado" fecha={estado.fechaPago} />}
         <dl class="r-filas">
           {cobro && <div><dt>Recibió la plata</dt><dd>{cobro.recibio}</dd></div>}
           <div><dt>Conductor</dt><dd>{t.conductor}</dd></div>
@@ -369,5 +370,18 @@ export function Trabajados({ trabajos, clientes, filtro, onFiltro, onVolver, onA
         </section>
       ))}
     </main>
+  )
+}
+
+const MESES_CORTOS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
+
+// Sello de tinta, como el de una factura cancelada.
+export function Sello({ texto, fecha }) {
+  const d = fecha ? new Date(fecha) : null
+  return (
+    <div class="sello" role="img" aria-label={`${texto}${d ? ` el ${d.getDate()} de ${MESES_CORTOS[d.getMonth()].toLowerCase()}` : ''}`}>
+      <span class="sello-txt">{texto}</span>
+      {d && <span class="sello-fecha">{d.getDate()} {MESES_CORTOS[d.getMonth()]} {d.getFullYear()}</span>}
+    </div>
   )
 }

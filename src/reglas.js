@@ -68,3 +68,27 @@ export function deudas(clientes, trabajos, cobros) {
     return { cliente: c, trabajos: suyos, pagos, trabajado, pagado, debe: trabajado - pagado }
   })
 }
+
+// Los pagos de un cliente cubren primero sus trabajos más viejos.
+// Devuelve, por trabajo: cuánto está cubierto, si quedó pagado y cuándo.
+export function estadoTrabajos(trabajos, cobros) {
+  const estado = {}
+  const porCliente = {}
+  for (const t of trabajos) (porCliente[t.clienteId] ??= { t: [], c: [] }).t.push(t)
+  for (const c of cobros) (porCliente[c.clienteId] ??= { t: [], c: [] }).c.push(c)
+  for (const { t, c } of Object.values(porCliente)) {
+    const ts = [...t].sort((a, b) => a.fecha.localeCompare(b.fecha))
+    const cs = [...c].sort((a, b) => a.fecha.localeCompare(b.fecha))
+    let acumulado = 0, i = 0, pagadoHasta = 0, fechaPagado = null
+    for (const tr of ts) {
+      const total = Math.max(0, totalTrabajo(tr))
+      acumulado += total
+      // avanzar por los pagos hasta cubrir lo acumulado
+      while (pagadoHasta < acumulado && i < cs.length) { pagadoHasta += cs[i].valor; fechaPagado = cs[i].fecha; i++ }
+      const cubierto = Math.max(0, Math.min(total, pagadoHasta - (acumulado - total)))
+      const pagado = cubierto >= total
+      estado[tr.id] = { total, cubierto, pagado, fechaPago: pagado ? (total === 0 ? tr.fecha : fechaPagado) : null }
+    }
+  }
+  return estado
+}
