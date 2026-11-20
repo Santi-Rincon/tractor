@@ -256,14 +256,25 @@ function Cuanto({ categoria, detalle, digitos, paso, pasos, onDigitos, onVolver,
 }
 
 function Listo({ gasto, yo, onInicio, onDeshacer }) {
+  const [confirmando, setConfirmando] = useState(false)
   return (
     <main class="scr done">
       <div class="badge"><Icon name="check-bold" class="ic-xl" /></div>
       <h1 class="ok-t">Quedó anotado</h1>
       <p class="sent">{yo}, usted pagó <b>{plata(gasto.valor)}</b> de <b>{gasto.nombre}</b> hoy.</p>
       <div class="sp" />
-      <button type="button" class="primary" onClick={onInicio}>Volver al inicio</button>
-      <button type="button" class="ghost" onClick={onDeshacer}><Icon name="arrow-counter-clockwise-bold" class="ic-s" /> Deshacer</button>
+      {confirmando ? (
+        <div class="confirma" role="alertdialog" aria-label="Confirmar borrado">
+          <p>¿Seguro que quiere borrar este gasto?</p>
+          <button type="button" class="primary peligro" onClick={onDeshacer}>Sí, borrarlo</button>
+          <button type="button" class="ghost" onClick={() => setConfirmando(false)}>No, dejarlo</button>
+        </div>
+      ) : (
+        <>
+          <button type="button" class="primary" onClick={onInicio}>Volver al inicio</button>
+          <button type="button" class="ghost" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="arrow-counter-clockwise-bold" class="ic-s" /> Deshacer</button>
+        </>
+      )}
     </main>
   )
 }

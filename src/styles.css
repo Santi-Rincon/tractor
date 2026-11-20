@@ -9,6 +9,7 @@
   --gasto: #84500E;
   --plata: #5A3F8C;
   --agenda: #22577A;
+  --peligro: #A3362B;
   --letra: "Rubik", system-ui, sans-serif;
   color-scheme: light;
 }
@@ -122,6 +123,9 @@ h1, h2, p { margin: 0; }
 .sent { font-size: 21px; line-height: 1.4; max-width: 300px; }
 .sp { flex: 1; }
 .done .primary { margin-top: 0; }
+.confirma { width: 100%; background: var(--tarjeta); border-radius: 22px; padding: 18px 16px 8px; display: flex; flex-direction: column; gap: 12px; animation: entra-der .2s ease-out; }
+.confirma p { font-size: 19px; font-weight: 500; }
+.primary.peligro { background: var(--peligro); }
 
 /* Aviso */
 .aviso {
