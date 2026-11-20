@@ -1,4 +1,4 @@
-import { useState } from 'preact/hooks'
+import { useRef, useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
 import { Barra, Monto, Teclado, Atajos, SiNo, ConfirmarBorrado, Avatar, Encabezado, vibrar, mil } from './comunes.jsx'
 import { plata, fechaLarga, hora, nombreDia as nombreDiaCorto } from './formato.js'
@@ -200,7 +200,33 @@ function Cuenta({ t, pago }) {
   )
 }
 
-export function Resumen({ t, pago, onVolver, onGuardar }) {
+// "YYYY-MM-DD" de hoy menos n días, en la hora local.
+const diaLocal = (n = 0) => { const d = new Date(); d.setDate(d.getDate() - n); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` }
+
+function ElegirDia({ dia, onDia }) {
+  const hoy = diaLocal(0), ayer = diaLocal(1)
+  const actual = dia || hoy
+  const otro = actual !== hoy && actual !== ayer
+  const entrada = useRef()
+  const [a, m, d] = actual.split('-').map(Number)
+  return (
+    <div class="dia-elegir">
+      <p class="sub-q">¿Qué día fue?</p>
+      <div class="chips">
+        <button type="button" class={`chip ch-trabajo${actual === hoy ? ' on' : ''}`} aria-pressed={actual === hoy} onClick={() => { vibrar(8); onDia('') }}>Hoy</button>
+        <button type="button" class={`chip ch-trabajo${actual === ayer ? ' on' : ''}`} aria-pressed={actual === ayer} onClick={() => { vibrar(8); onDia(ayer) }}>Ayer</button>
+        <button type="button" class={`chip ch-trabajo${otro ? ' on' : ''}`} aria-pressed={otro}
+          onClick={() => { vibrar(8); entrada.current.showPicker ? entrada.current.showPicker() : entrada.current.click() }}>
+          {otro ? fechaLarga(new Date(a, m - 1, d)).replace(/^\S+ /, '') : 'Otro día'}
+        </button>
+      </div>
+      <input ref={entrada} class="fecha-oculta" type="date" max={hoy} value={actual} tabIndex={-1} aria-hidden="true"
+        onChange={(e) => e.currentTarget.value && onDia(e.currentTarget.value === hoy ? '' : e.currentTarget.value)} />
+    </div>
+  )
+}
+
+export function Resumen({ t, pago, dia, onDia, onVolver, onGuardar }) {
   const [guardando, setGuardando] = useState(false)
   return (
     <main class="scr">
@@ -211,6 +237,7 @@ export function Resumen({ t, pago, onVolver, onGuardar }) {
           <span class="r-tipo">{t.cliente.nombre}{t.vereda && <small>{t.vereda}</small>}</span></div>
         <Cuenta t={t} pago={pago} />
       </article>
+      <ElegirDia dia={dia} onDia={onDia} />
       <div class="sp" />
       <button type="button" class="primary" disabled={guardando} onClick={() => { setGuardando(true); onGuardar() }}>Guardar</button>
     </main>

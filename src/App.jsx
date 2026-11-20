@@ -28,7 +28,7 @@ const FILTROS = [
 ]
 
 const borradorGasto = () => ({ categoria: null, detalle: '', digitos: '' })
-const borradorTrabajo = () => ({ cliente: null, vereda: '', labores: [], idx: 0, tipo: null, acpm: '', pago: '' })
+const borradorTrabajo = () => ({ cliente: null, vereda: '', labores: [], idx: 0, tipo: null, acpm: '', pago: '', dia: '' })
 
 export function App() {
   const [listo, setListo] = useState(false)
@@ -136,7 +136,10 @@ export function App() {
   const trabajoEnCurso = () => ({ cliente: bt.cliente, vereda: bt.vereda, labores: bt.labores, acpmCliente: Number(bt.acpm || 0) })
 
   const guardarTrabajo = async () => {
-    const ahora = new Date().toISOString()
+    // Si el trabajo fue otro día, se guarda en ese día con la hora actual.
+    const fecha = new Date()
+    if (bt.dia) { const [a, m, d] = bt.dia.split('-').map(Number); fecha.setFullYear(a, m - 1, d) }
+    const ahora = fecha.toISOString()
     const t = {
       id: nuevoId(), fecha: ahora, clienteId: bt.cliente.id, clienteNombre: bt.cliente.nombre, vereda: bt.vereda,
       conductor: yo, labores: bt.labores, acpmCliente: Number(bt.acpm || 0), registradoPor: yo
@@ -203,7 +206,7 @@ export function App() {
         }} />
     ); break
     case 'trabajados': vista = <Trabajados trabajos={datos.trabajos} clientes={datos.clientes} filtro={filtroConductor} onFiltro={setFiltroConductor} onVolver={volver} onAbrir={abrir} onHoras={() => ir('horas')} />; break
-    case 'horas': vista = <Horas yo={yo} trabajos={datos.trabajos} clientes={datos.clientes} elegido={conductorHoras} onElegir={setConductorHoras} onVolver={volver} onAbrir={abrir} />; break
+    case 'horas': vista = <Horas yo={yo} trabajos={datos.trabajos} clientes={datos.clientes} elegido={conductorHoras} onElegir={setConductorHoras} onVolver={volver} onAbrir={abrir} onAnadir={empezarTrabajo} />; break
     case 'historial': vista = <Historial registros={registros} clientes={datos.clientes} filtro={filtro} onFiltro={setFiltro} onVolver={volver} onAbrir={abrir} />; break
     case 'recibo':
       if (abierto.tipo === 'gasto') vista = <ReciboGasto gasto={reg} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('gasto', id)} />
@@ -249,7 +252,7 @@ export function App() {
           etiqueta={(v) => `Todo · ${plata(v)}`} onDigitos={(d) => setBt((b) => ({ ...b, pago: d }))} onVolver={volver} onListo={() => ir('t-resumen')} />
       ); break
     }
-    case 't-resumen': vista = <Resumen t={enCurso} pago={Number(bt.pago || 0)} onVolver={volver} onGuardar={guardarTrabajo} />; break
+    case 't-resumen': vista = <Resumen t={enCurso} pago={Number(bt.pago || 0)} dia={bt.dia} onDia={(d) => setBt((b) => ({ ...b, dia: d }))} onVolver={volver} onGuardar={guardarTrabajo} />; break
     case 't-listo': vista = (
       <ListoTrabajo t={ult} pago={datos.cobros.find((c) => c.trabajoId === ult.id)?.valor ?? 0} onInicio={alInicio} onDeshacer={deshacer} />
     ); break

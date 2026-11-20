@@ -18,7 +18,7 @@ export function MisHorasRenglon({ cuenta, onAbrir }) {
 }
 
 // Horas de los conductores. Los dueños ven a todos; el conductor solo lo suyo.
-export function Horas({ yo, trabajos, clientes, elegido, onElegir, onVolver, onAbrir }) {
+export function Horas({ yo, trabajos, clientes, elegido, onElegir, onVolver, onAbrir, onAnadir }) {
   const esConductor = CONDUCTORES.includes(yo)
   const quienes = !esConductor || yo === 'Raúl' ? CONDUCTORES : [yo]
   const cuentas = quienes.map((c) => cuentaConductor(trabajos, c))
@@ -79,6 +79,13 @@ export function Horas({ yo, trabajos, clientes, elegido, onElegir, onVolver, onA
           ))}
         </section>
       ))}
+      {actual === yo && (
+        <div class="pie-fijo">
+          <button type="button" class="primary con-ic" onClick={() => { vibrar(10); onAnadir() }}>
+            <Icon name="plus-bold" class="ic-s" /> Añadir un trabajo
+          </button>
+        </div>
+      )}
     </main>
   )
 }

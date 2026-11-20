@@ -296,3 +296,11 @@ h1, h2, p { margin: 0; }
 .mh-debe { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.15; }
 .mh-debe small { font-size: 12px; color: var(--suave); }
 .mh-debe b { font-size: 18px; font-weight: 600; color: var(--trabajo); font-variant-numeric: tabular-nums; }
+
+/* Botón fijo abajo (Añadir un trabajo) */
+.pie-fijo { position: sticky; bottom: 0; margin-top: auto; padding-top: 16px; background: linear-gradient(to bottom, transparent, var(--fondo) 14px); }
+.primary.con-ic { display: flex; align-items: center; justify-content: center; gap: 10px; }
+.primary.con-ic .ic-s { width: 26px; height: 26px; }
+/* Día del trabajo */
+.dia-elegir { margin-top: 16px; }
+.fecha-oculta { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
