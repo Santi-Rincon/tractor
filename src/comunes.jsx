@@ -28,17 +28,12 @@ export function Encabezado({ titulo, onVolver }) {
   )
 }
 
-export function Monto({ valor, unidad = '$', onLimpiar }) {
+export function Monto({ valor, unidad = '$' }) {
   return (
     <div class="monto">
       <div class={`disp${valor ? '' : ' cero'}`} aria-live="polite">
         {unidad === '$' && <span class="cur">$</span>}{plata(valor)}{unidad !== '$' && <span class="unidad"> {unidad}</span>}
       </div>
-      {onLimpiar && valor > 0 && (
-        <button type="button" class="limpiar" onClick={() => { vibrar(10); onLimpiar() }}>
-          <Icon name="x-bold" class="ic-xs" /> Borrar todo
-        </button>
-      )}
     </div>
   )
 }
@@ -55,6 +50,10 @@ export function Teclado({ digitos, onDigitos, sinMiles }) {
     <div class="pad">
       {teclas.map((k) => k ? <button type="button" class="key" onClick={() => tecla(k)}>{k}</button> : <span />)}
       <button type="button" class="key" aria-label="Borrar" onClick={() => tecla('borrar')}><Icon name="backspace-duotone" class="ic-s" /></button>
+      <button type="button" class={`limpiar${digitos ? '' : ' oculto'}`} tabIndex={digitos ? 0 : -1} aria-hidden={!digitos}
+        onClick={() => { vibrar(10); onDigitos('') }}>
+        <Icon name="x-bold" class="ic-xs" /> Borrar todo
+      </button>
     </div>
   )
 }

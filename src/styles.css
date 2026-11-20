@@ -265,7 +265,8 @@ h1, h2, p { margin: 0; }
 .dia-h.dos { flex-wrap: wrap; row-gap: 2px; }
 
 /* Valor con botón para dejarlo en cero */
-.monto { display: flex; flex-direction: column; align-items: flex-start; margin-bottom: 14px; min-height: 108px; }
-.monto .disp { margin-bottom: 4px; max-width: 100%; }
-.limpiar { align-self: flex-end; display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 14px; border-radius: 999px; background: #F6E3E0; color: var(--peligro); font-size: 15px; font-weight: 600; }
-.limpiar:active { transform: scale(.96); }
+.monto .disp { max-width: 100%; }
+/* "Borrar todo" va como última fila del teclado, a todo lo ancho, discreto */
+.limpiar { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 44px; border-radius: 16px; color: var(--peligro); font-size: 16px; font-weight: 600; }
+.limpiar:active { background: #F6E3E0; }
+.limpiar.oculto { visibility: hidden; }

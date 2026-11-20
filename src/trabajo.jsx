@@ -146,7 +146,7 @@ export function Bultos({ cliente, inicial, onVolver, onListo }) {
     <main class="scr">
       <Barra titulo={<>Remolcada · <b>{cliente.nombre}</b></>} onVolver={onVolver} color="trabajo" />
       <h1 class="q">¿Cuántos bultos?</h1>
-      <Monto valor={bultos} unidad="bultos" onLimpiar={() => setDigitos('')} />
+      <Monto valor={bultos} unidad="bultos" />
       <div class="chips">
         {DISTANCIAS.map((x) => (
           <button type="button" class={`chip ch-trabajo dos-lineas${dist === x.id ? ' on' : ''}`} onClick={() => { vibrar(8); setDist(x.id) }}>
@@ -179,7 +179,7 @@ export function Valor({ cliente, pregunta, digitos, atajos, etiqueta, onDigitos,
     <main class="scr">
       <Barra titulo={T(cliente)} onVolver={onVolver} color="trabajo" />
       <h1 class="q">{pregunta}</h1>
-      <Monto valor={valor} onLimpiar={() => onDigitos('')} />
+      <Monto valor={valor} />
       <Atajos valores={atajos} actual={valor} etiqueta={etiqueta ?? mil} onElegir={(a) => onDigitos(a ? String(a) : '')} color="trabajo" />
       <Teclado digitos={digitos} onDigitos={onDigitos} />
       <button type="button" class="primary" disabled={!valor} onClick={onListo}>Siguiente</button>

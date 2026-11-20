@@ -51,7 +51,7 @@ export function Cuanto({ categoria, detalle, digitos, paso, pasos, onDigitos, on
     <main class="scr">
       <Barra titulo={<>Gasto · <b>{nombre}</b></>} paso={paso} pasos={pasos} onVolver={onVolver} />
       <h1 class="q">¿Cuánto fue?</h1>
-      <Monto valor={valor} onLimpiar={() => onDigitos('')} />
+      <Monto valor={valor} />
       <Atajos valores={categoria.atajos} actual={valor} onElegir={(a) => onDigitos(a ? String(a) : '')} />
       <Teclado digitos={digitos} onDigitos={onDigitos} />
       <button type="button" class="primary" disabled={!valor} onClick={onSiguiente}>Siguiente</button>
