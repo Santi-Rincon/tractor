@@ -2,7 +2,7 @@ import { get, set, del, getMany } from 'idb-keyval'
 
 // Las primeras pruebas usaban "Papá" y "Padrino"; se pasan a los nombres reales.
 const RENOMBRES = { 'Papá': 'Santiago', 'Padrino': 'Raúl' }
-const LISTAS = ['gastos', 'trabajos', 'cobros', 'clientes', 'pagos']
+const LISTAS = ['gastos', 'trabajos', 'cobros', 'clientes', 'pagos', 'citas']
 
 // Pide al navegador que no borre estos datos cuando le falte espacio.
 export async function pedirPersistencia() {

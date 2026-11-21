@@ -395,3 +395,48 @@ h1, h2, p { margin: 0; }
 .dinero b { font-size: 17px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .sub-q.sin-margen { margin: -4px 4px 0; }
 .mes { margin-top: 16px; }
+
+/* Agenda (azul de cielo) */
+.c-agenda b { color: var(--agenda); }
+.p-agenda i { background: var(--agenda); }
+.burbuja.b-agenda { background: #DFEAF1; color: var(--agenda); }
+.c-foco-agenda:focus { border-color: var(--agenda); }
+.e-agenda { background: var(--agenda); }
+.primary.azul, .badge.azul { background: var(--agenda); }
+.azul-t { color: var(--agenda) !important; }
+.semana { display: flex; gap: 8px; overflow-x: auto; margin: 16px -16px 0; padding: 2px 16px 8px; scroll-snap-type: x proximity; }
+.dia-b { flex: 0 0 62px; min-height: 84px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  background: var(--tarjeta); border: 2px solid #D3DACD; box-shadow: 0 3px 0 #D3DACD; scroll-snap-align: start; transition: transform .1s ease; }
+.dia-b:active { transform: translateY(2px); box-shadow: 0 1px 0 #D3DACD; }
+.dia-b.on { background: var(--agenda); border-color: var(--agenda); color: #fff; box-shadow: 0 3px 0 #123A54; }
+.db-nombre { font-size: 13px; text-transform: capitalize; }
+.db-num { font-size: 24px; font-weight: 600; line-height: 1; }
+.db-puntos { display: flex; gap: 3px; height: 7px; }
+.db-puntos i { width: 7px; height: 7px; border-radius: 50%; background: var(--agenda); }
+.dia-b.on .db-puntos i { background: #fff; }
+.dia-agenda { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; margin: 16px 4px 8px; flex-wrap: wrap; }
+.dia-agenda h2 { font-size: 21px; font-weight: 600; }
+.dia-agenda span { font-size: 15px; color: var(--suave); }
+.dia-agenda span.lleno, small.lleno { color: var(--peligro) !important; font-weight: 600; }
+small.ocupado { color: var(--agenda) !important; } small.libre { color: var(--trabajo) !important; }
+.row.cita { margin-bottom: 8px; }
+.row.cita.e-hecha { opacity: .7; }
+.estado-cita { font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 999px; white-space: nowrap; }
+.ec-apartada { background: #DFEAF1; color: var(--agenda); }
+.ec-aplazada { background: #F4EADB; color: var(--gasto); }
+.ec-hecha { background: #E1ECE4; color: var(--trabajo); }
+.cita-dia { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; font-size: 22px; font-weight: 600; color: var(--agenda); }
+.acciones-cita { display: flex; flex-direction: column; gap: 10px; }
+.boton-sec { display: flex; align-items: center; justify-content: center; gap: 10px; min-height: 58px; border-radius: 999px; font-size: 19px; font-weight: 600;
+  background: var(--tarjeta); color: var(--agenda); border: 2px solid #C9D9E4; box-shadow: 0 3px 0 #C9D9E4; }
+.boton-sec:active { transform: translateY(2px); box-shadow: 0 1px 0 #C9D9E4; }
+.horas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.hora-b { aspect-ratio: 1 / 1; max-height: 104px; border-radius: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center;
+  background: var(--tarjeta); border: 2px solid #C9D9E4; box-shadow: 0 4px 0 #C9D9E4; font-size: 15px; color: var(--suave); }
+.hora-b b { font-size: 34px; font-weight: 600; color: var(--agenda); line-height: 1.1; }
+.hora-b:active { transform: translateY(3px); box-shadow: 0 1px 0 #C9D9E4; }
+.hora-b.nose b { color: var(--suave); }
+.lista-dias { display: flex; flex-direction: column; gap: 8px; }
+.opcion.dia-op { min-height: 64px; font-size: 19px; justify-content: space-between; }
+.opcion.dia-op small { font-weight: 500; }
+.opcion.dia-op.sugerido { border: 2px solid var(--agenda); }

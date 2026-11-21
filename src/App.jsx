@@ -6,6 +6,7 @@ import { vibrar, nuevoId, Encabezado, ConfirmarBorrado, Avatar, COLORES_CLIENTE 
 import { CONDUCTORES, labor, totalTrabajo, tiempo, cuentaConductor, deudas, estadoTrabajos } from './reglas.js'
 import { Plata, ElegirDeudor, CuentaCliente, ValorPlata, ElegirConductor, ListoPlata, ReciboPago } from './plata.jsx'
 import { Horas, MisHorasRenglon } from './horas.jsx'
+import { Agenda, Cita, HorasAprox, ElegirDiaCita, ListoCita, nombreDiaCita, diaClave } from './agenda.jsx'
 import { Categoria, Detalle, Cuanto, Foto, ReciboGasto, categoria } from './gasto.jsx'
 import {
   ElegirCliente, ClienteNuevo, ElegirVereda, ElegirLabor, Tiempo, Bultos, Pregunta, Valor,
@@ -29,12 +30,12 @@ const FILTROS = [
 ]
 
 const borradorGasto = () => ({ categoria: null, detalle: '', digitos: '' })
-const borradorTrabajo = () => ({ cliente: null, vereda: '', labores: [], idx: 0, tipo: null, acpm: '', pago: '', dia: '' })
+const borradorTrabajo = () => ({ cliente: null, vereda: '', labores: [], idx: 0, tipo: null, acpm: '', pago: '', dia: '', citaId: null })
 
 export function App() {
   const [listo, setListo] = useState(false)
   const [yo, setYo] = useState(null)
-  const [datos, setDatos] = useState({ gastos: [], trabajos: [], cobros: [], clientes: [], pagos: [] })
+  const [datos, setDatos] = useState({ gastos: [], trabajos: [], cobros: [], clientes: [], pagos: [], citas: [] })
   const [pila, setPila] = useState(['inicio'])
   const pilaRef = useRef(pila)
   const saltarPop = useRef(false)
@@ -49,6 +50,9 @@ export function App() {
   const [bp, setBp] = useState({ cliente: null, conductor: null, digitos: '' })
   const [clienteVisto, setClienteVisto] = useState(null)
   const [plataTab, setPlataTab] = useState('cobros')
+  const [diaAgenda, setDiaAgenda] = useState(null)
+  const [citaAbierta, setCitaAbierta] = useState(null)
+  const [bc, setBc] = useState({ cliente: null, labor: null, horas: 0, sugerido: null })
   const [aviso, setAviso] = useState('')
   const avisoTimer = useRef()
 
@@ -123,11 +127,12 @@ export function App() {
     if (!CONDUCTORES.includes(yo)) return ir('trabajados')
     setBt(borradorTrabajo()); ir('t-cliente')
   }
-  const crearCliente = async (nombre) => {
+  const crearCliente = async (nombre, enAgenda) => {
     const existente = datos.clientes.find((c) => c.nombre.toLowerCase() === nombre.toLowerCase())
     const c = existente ?? { id: nuevoId(), nombre, vereda: '', color: datos.clientes.length % COLORES_CLIENTE.length }
     if (!existente) await actualizar({ clientes: [c, ...datos.clientes] })
-    setBt((b) => ({ ...b, cliente: c })); ir('t-vereda')
+    if (enAgenda) { setBc((b) => ({ ...b, cliente: c })); ir('a-labor') }
+    else { setBt((b) => ({ ...b, cliente: c })); ir('t-vereda') }
   }
   const veredas = [...new Set([...datos.clientes.map((c) => c.vereda), ...datos.trabajos.map((t) => t.vereda)].filter(Boolean))]
   const elegirVereda = (v) => { setBt((b) => ({ ...b, vereda: v, idx: b.labores.length })); ir('t-labor') }
@@ -155,6 +160,7 @@ export function App() {
       clientes: datos.clientes.map((c) => c.id === t.clienteId ? { ...c, vereda: t.vereda || c.vereda, uso: ahora } : c)
         .sort((a, b) => (b.uso ?? '').localeCompare(a.uso ?? ''))
     }
+    if (bt.citaId) cambios.citas = datos.citas.map((c) => c.id === bt.citaId ? { ...c, estado: 'hecha', trabajoId: t.id } : c)
     if (pago > 0) {
       cambios.cobros = [{ id: nuevoId(), fecha: ahora, clienteId: t.clienteId, clienteNombre: t.clienteNombre, valor: pago, recibio: yo, trabajoId: t.id, registradoPor: yo }, ...datos.cobros]
     }
@@ -163,7 +169,39 @@ export function App() {
   }
 
   const borrarTrabajo = async (id) => {
-    await actualizar({ trabajos: datos.trabajos.filter((t) => t.id !== id), cobros: datos.cobros.filter((c) => c.trabajoId !== id) })
+    await actualizar({
+      trabajos: datos.trabajos.filter((t) => t.id !== id),
+      cobros: datos.cobros.filter((c) => c.trabajoId !== id),
+      // si venía de una cita, la cita vuelve a quedar apartada
+      citas: datos.citas.map((c) => c.trabajoId === id ? { ...c, estado: 'apartada', trabajoId: null } : c)
+    })
+  }
+
+  // ---------- Agenda ----------
+  const empezarCita = (sugerido) => { setBc({ cliente: null, labor: null, horas: 0, sugerido }); ir('a-cliente') }
+  const guardarCita = async (dia) => {
+    const c = {
+      id: nuevoId(), dia, clienteId: bc.cliente.id, clienteNombre: bc.cliente.nombre, vereda: bc.cliente.vereda || '',
+      labor: bc.labor, horas: bc.horas, estado: 'apartada', registradoPor: yo, creada: new Date().toISOString(), orden: Date.now()
+    }
+    await actualizar({ citas: [...datos.citas, c] })
+    setDiaAgenda(dia); setCitaAbierta(c.id); vibrar(30)
+    fijarPila(['inicio', 'agenda', 'a-listo'], 'adelante')
+  }
+  const aplazarCita = async (dia) => {
+    const c = datos.citas.find((x) => x.id === citaAbierta)
+    await actualizar({ citas: datos.citas.map((x) => x.id === c.id ? { ...x, dia, estado: 'aplazada', aplazadaDesde: x.aplazadaDesde ?? x.dia } : x) })
+    setDiaAgenda(dia); fijarPila(['inicio', 'agenda'], 'atras')
+    mostrarAviso(`Se pasó para ${nombreDiaCita(dia).toLowerCase()}`)
+  }
+  const borrarCita = async (id, alAgenda) => {
+    await actualizar({ citas: datos.citas.filter((x) => x.id !== id) })
+    fijarPila(['inicio', 'agenda'], 'atras'); mostrarAviso('Se quitó de la agenda')
+  }
+  const registrarDesdeCita = (c) => {
+    const cliente = datos.clientes.find((x) => x.id === c.clienteId) ?? { id: c.clienteId, nombre: c.clienteNombre, vereda: c.vereda }
+    setBt({ ...borradorTrabajo(), cliente, vereda: c.vereda, tipo: c.labor, citaId: c.id })
+    ir(labor(c.labor).porHora ? 't-tiempo' : 't-bultos')
   }
 
   // ---------- Plata ----------
@@ -225,22 +263,50 @@ export function App() {
   let pantalla = pila[pila.length - 1]
   const faltaGasto = pantalla.startsWith('g-') && !['g-listo', 'g-categoria'].includes(pantalla) && !bg.categoria
   const faltaTrabajo = pantalla.startsWith('t-') && !['t-cliente', 't-nuevo', 't-listo'].includes(pantalla) && !bt.cliente
+  const citaVista = datos.citas.find((c) => c.id === citaAbierta)
+  const faltaAgenda = (['a-labor', 'a-horas', 'a-dia'].includes(pantalla) && !bc.cliente) || (['cita', 'cita-dia', 'a-listo'].includes(pantalla) && !citaVista)
   const faltaPlata = (pantalla === 'p-valor' && !bp.cliente) || (pantalla === 'pc-valor' && !bp.conductor) || (pantalla === 'cliente' && !listaDeudas.find((d) => d.cliente.id === clienteVisto))
-  if (faltaGasto || faltaTrabajo || faltaPlata || (pantalla.endsWith('-listo') && !ult) || (pantalla === 'recibo' && !reg)) pantalla = 'inicio'
+  if (faltaGasto || faltaTrabajo || faltaPlata || faltaAgenda || (pantalla.endsWith('-listo') && pantalla !== 'a-listo' && !ult) || (pantalla === 'recibo' && !reg)) pantalla = 'inicio'
 
   const cli = bt.cliente
   const enCurso = trabajoEnCurso()
   let vista
   switch (pantalla) {
     case 'inicio': vista = (
-      <Inicio yo={yo} registros={registros} clientes={datos.clientes} trabajos={datos.trabajos} pagos={datos.pagos} onHoras={() => ir('horas')} onAbrir={abrir} onVerTodo={() => ir('historial')} onCambiar={() => elegirPersona(null)}
+      <Inicio yo={yo} citasHoy={datos.citas.filter((c) => c.dia === diaClave(new Date()) && c.estado !== 'hecha').length} registros={registros} clientes={datos.clientes} trabajos={datos.trabajos} pagos={datos.pagos} onHoras={() => ir('horas')} onAbrir={abrir} onVerTodo={() => ir('historial')} onCambiar={() => elegirPersona(null)}
         onAccion={(a) => {
           if (a === 'gasto') { setBg(borradorGasto()); ir('g-categoria') }
           else if (a === 'trabajo') empezarTrabajo()
           else if (a === 'plata') ir('plata')
+          else if (a === 'agenda') { setDiaAgenda(null); ir('agenda') }
           else mostrarAviso(`${ACCIONES.find((x) => x.id === a).nombre} llega en la próxima versión`)
         }} />
     ); break
+    case 'agenda': vista = (
+      <Agenda citas={datos.citas} clientes={datos.clientes} dia={diaAgenda} onDia={setDiaAgenda} onVolver={volver}
+        onApartar={empezarCita} onAbrir={(id) => { vibrar(8); setCitaAbierta(id); ir('cita') }} />
+    ); break
+    case 'cita': vista = (
+      <Cita cita={citaVista} cliente={datos.clientes.find((x) => x.id === citaVista.clienteId)} puedeRegistrar={CONDUCTORES.includes(yo)}
+        onVolver={volver} onRegistrar={() => registrarDesdeCita(citaVista)} onAplazar={() => ir('cita-dia')} onBorrar={() => borrarCita(citaVista.id)} />
+    ); break
+    case 'cita-dia': vista = (
+      <ElegirDiaCita citas={datos.citas} cliente={{ nombre: citaVista.clienteNombre }} pregunta="¿Para qué día la pasamos?"
+        horas={citaVista.horas} excluir={citaVista.dia} onVolver={volver} onElegir={aplazarCita} />
+    ); break
+    case 'a-cliente': vista = <ElegirCliente modo="agenda" clientes={datos.clientes} onVolver={volver} onNuevo={() => ir('a-nuevo')} onElegir={(c) => { setBc((b) => ({ ...b, cliente: c })); ir('a-labor') }} />; break
+    case 'a-nuevo': vista = <ClienteNuevo modo="agenda" onVolver={volver} onCrear={(n) => crearCliente(n, true)} />; break
+    case 'a-labor': vista = <ElegirLabor modo="agenda" cliente={bc.cliente} onVolver={volver} onElegir={(l) => { setBc((b) => ({ ...b, labor: l, horas: 0 })); ir(labor(l).porHora ? 'a-horas' : 'a-dia') }} />; break
+    case 'a-horas': vista = <HorasAprox cliente={bc.cliente} tipo={bc.labor} onVolver={volver} onListo={(h) => { setBc((b) => ({ ...b, horas: h })); ir('a-dia') }} />; break
+    case 'a-dia': vista = <ElegirDiaCita citas={datos.citas} cliente={bc.cliente} sugerido={bc.sugerido} horas={bc.horas} onVolver={volver} onElegir={guardarCita} />; break
+    case 'a-listo': {
+      const otras = datos.citas.filter((c) => c.dia === citaVista.dia && c.id !== citaVista.id && c.estado !== 'cancelada').length
+      vista = (
+        <ListoCita cita={citaVista} onAgenda={() => fijarPila(['inicio', 'agenda'], 'atras')}
+          onDeshacer={() => borrarCita(citaVista.id)}
+          frase={<>{labor(citaVista.labor).nombre} para <b>{citaVista.clienteNombre}</b>, {nombreDiaCita(citaVista.dia).toLowerCase()}.{otras ? ` Ese día hay ${otras} ${otras === 1 ? 'cita' : 'citas'} más.` : ''}</>} />
+      ); break
+    }
     case 'trabajados': vista = <Trabajados trabajos={trabajosPorFecha} clientes={datos.clientes} filtro={filtroConductor} onFiltro={setFiltroConductor} onVolver={volver} onAbrir={abrir} onHoras={() => ir('horas')} />; break
     case 'horas': vista = <Horas yo={yo} trabajos={trabajosPorFecha} pagos={datos.pagos} clientes={datos.clientes} elegido={conductorHoras} onElegir={setConductorHoras} onVolver={volver} onAbrir={abrir} onAnadir={empezarTrabajo} />; break
     case 'historial': vista = <Historial registros={registros} clientes={datos.clientes} filtro={filtro} onFiltro={setFiltro} onVolver={volver} onAbrir={abrir} />; break
@@ -389,7 +455,7 @@ function Fila({ item, clientes = [], onAbrir }) {
   )
 }
 
-function Inicio({ yo, registros, clientes, trabajos, pagos, onHoras, onAccion, onCambiar, onAbrir, onVerTodo }) {
+function Inicio({ yo, citasHoy, registros, clientes, trabajos, pagos, onHoras, onAccion, onCambiar, onAbrir, onVerTodo }) {
   return (
     <main class="scr">
       <header class="top">
@@ -401,7 +467,7 @@ function Inicio({ yo, registros, clientes, trabajos, pagos, onHoras, onAccion, o
           <button type="button" class={`tile t-${a.id}`} onClick={() => { vibrar(10); onAccion(a.id) }}>
             <Icon name={a.icono} />
             <span class="tl">{a.nombre}</span>
-            <span class="th">{a.id === 'trabajo' && !CONDUCTORES.includes(yo) ? 'ver lo trabajado' : a.pista}</span>
+            <span class="th">{a.id === 'trabajo' && !CONDUCTORES.includes(yo) ? 'ver lo trabajado' : a.id === 'agenda' && citasHoy ? `hoy: ${citasHoy} ${citasHoy === 1 ? 'cita' : 'citas'}` : a.pista}</span>
           </button>
         ))}
       </div>

@@ -5,21 +5,27 @@ import { Barra, Monto, Teclado, Atajos, SiNo, ConfirmarBorrado, Avatar, Encabeza
 import { plata, fechaLarga, hora, nombreDia as nombreDiaCorto } from './formato.js'
 import { LABORES, DISTANCIAS, PRECIOS_HORA, labor, valorLabor, totalTrabajo, tiempo, resumenLabor } from './reglas.js'
 
-const T = (cliente) => cliente ? <>Trabajo · <b>{cliente.nombre}</b></> : <b>Trabajo</b>
+const T = (cliente, que = 'Trabajo') => cliente ? <>{que} · <b>{cliente.nombre}</b></> : <b>{que}</b>
+// En la agenda se reusan las mismas pantallas, con su color y sus preguntas.
+const MODO = {
+  trabajo: { que: 'Trabajo', color: 'trabajo', quien: '¿Para quién fue el trabajo?', labor: '¿Qué labor hizo?' },
+  agenda: { que: 'Agenda', color: 'agenda', quien: '¿Para quién es el servicio?', labor: '¿Qué labor necesita?' }
+}
 
-export function ElegirCliente({ clientes, onVolver, onElegir, onNuevo }) {
+export function ElegirCliente({ clientes, onVolver, onElegir, onNuevo, modo = 'trabajo' }) {
+  const M = MODO[modo]
   const [buscar, setBuscar] = useState('')
   const lista = clientes.filter((c) => c.nombre.toLowerCase().includes(buscar.trim().toLowerCase()))
   return (
     <main class="scr">
-      <Barra titulo={T()} onVolver={onVolver} color="trabajo" />
-      <h1 class="q">¿Para quién fue el trabajo?</h1>
+      <Barra titulo={T(null, M.que)} onVolver={onVolver} color={M.color} />
+      <h1 class="q">{M.quien}</h1>
       {clientes.length > 6 && (
         <input class="campo buscar" type="search" value={buscar} placeholder="Buscar por nombre" onInput={(e) => setBuscar(e.currentTarget.value)} />
       )}
       <div class="lista-grande">
         <button type="button" class="opcion con-icono nuevo" onClick={onNuevo}>
-          <span class="burbuja b-trabajo"><Icon name="user-plus-duotone" /></span>Cliente nuevo
+          <span class={`burbuja b-${M.color}`}><Icon name="user-plus-duotone" /></span>Cliente nuevo
         </button>
         {lista.map((c) => (
           <button type="button" class="opcion con-icono" onClick={() => { vibrar(10); onElegir(c) }}>
@@ -33,14 +39,15 @@ export function ElegirCliente({ clientes, onVolver, onElegir, onNuevo }) {
   )
 }
 
-export function ClienteNuevo({ onVolver, onCrear }) {
+export function ClienteNuevo({ onVolver, onCrear, modo = 'trabajo' }) {
+  const M = MODO[modo]
   const [nombre, setNombre] = useState('')
   const listo = nombre.trim().length > 1
   return (
     <main class="scr">
-      <Barra titulo={T()} onVolver={onVolver} color="trabajo" />
+      <Barra titulo={T(null, M.que)} onVolver={onVolver} color={M.color} />
       <h1 class="q">¿Cómo se llama el cliente?</h1>
-      <input class="campo c-foco-trabajo" type="text" value={nombre} enterkeyhint="next" autocapitalize="words" autofocus
+      <input class={`campo c-foco-${M.color}`} type="text" value={nombre} enterkeyhint="next" autocapitalize="words" autofocus
         placeholder="Ej.: Don Pedro Ríos" onInput={(e) => setNombre(e.currentTarget.value)}
         onKeyDown={(e) => { if (e.key === 'Enter' && listo) onCrear(nombre.trim()) }} />
       <p class="pista">También puede tocar el micrófono del teclado y decir el nombre.</p>
@@ -86,15 +93,16 @@ export function ElegirVereda({ cliente, veredas, onVolver, onElegir }) {
   )
 }
 
-export function ElegirLabor({ cliente, onVolver, onElegir }) {
+export function ElegirLabor({ cliente, onVolver, onElegir, modo = 'trabajo' }) {
+  const M = MODO[modo]
   return (
     <main class="scr">
-      <Barra titulo={T(cliente)} onVolver={onVolver} color="trabajo" />
-      <h1 class="q">¿Qué labor hizo?</h1>
+      <Barra titulo={T(cliente, M.que)} onVolver={onVolver} color={M.color} />
+      <h1 class="q">{M.labor}</h1>
       <div class="lista-grande">
         {LABORES.map((l) => (
           <button type="button" class="opcion con-icono" onClick={() => { vibrar(10); onElegir(l.id) }}>
-            <span class="burbuja b-trabajo"><Icon name={l.porHora ? 'tractor-duotone' : 'truck-trailer-duotone'} /></span>
+            <span class={`burbuja b-${M.color}`}><Icon name={l.porHora ? 'tractor-duotone' : 'truck-trailer-duotone'} /></span>
             <span class="op-txt">{l.nombre}{l.detalle && <small>{l.detalle}</small>}</span>
           </button>
         ))}
