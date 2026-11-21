@@ -440,3 +440,16 @@ small.ocupado { color: var(--agenda) !important; } small.libre { color: var(--tr
 .opcion.dia-op { min-height: 64px; font-size: 19px; justify-content: space-between; }
 .opcion.dia-op small { font-weight: 500; }
 .opcion.dia-op.sugerido { border: 2px solid var(--agenda); }
+
+/* Agenda: semana de un vistazo + lista de todas las citas */
+.semana-tit { margin: 14px 4px -8px; }
+.dia-b { min-height: 92px; }
+.dia-b.ocupado { border-color: var(--agenda); box-shadow: 0 3px 0 var(--agenda); }
+.dia-b.ocupado .db-num { color: var(--agenda); }
+.dia-b.lleno { border-color: var(--peligro); box-shadow: 0 3px 0 var(--peligro); }
+.dia-b.lleno .db-num, .dia-b.lleno .db-cuenta { color: var(--peligro); }
+.db-cuenta { font-size: 12px; color: var(--suave); }
+.dia-b.ocupado .db-cuenta { color: var(--agenda); font-weight: 600; }
+.grupo-dia { display: flex; flex-direction: column; scroll-margin-top: 12px; }
+.grupo-dia .dia-agenda { margin-top: 18px; }
+.atrasadas .dia-agenda h2 { color: var(--gasto); }

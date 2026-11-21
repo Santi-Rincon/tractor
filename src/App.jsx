@@ -283,7 +283,7 @@ export function App() {
         }} />
     ); break
     case 'agenda': vista = (
-      <Agenda citas={datos.citas} clientes={datos.clientes} dia={diaAgenda} onDia={setDiaAgenda} onVolver={volver}
+      <Agenda citas={datos.citas} clientes={datos.clientes} onAviso={mostrarAviso} onVolver={volver}
         onApartar={empezarCita} onAbrir={(id) => { vibrar(8); setCitaAbierta(id); ir('cita') }} />
     ); break
     case 'cita': vista = (

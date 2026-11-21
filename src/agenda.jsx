@@ -29,50 +29,83 @@ function laborTxt(c) {
   return c.labor === 'remolcada' ? 'Remolcada' : `${l.nombre} · unas ${c.horas} h`
 }
 
-// Pantalla principal: la semana arriba, las citas del día elegido y el botón para apartar.
-export function Agenda({ citas, clientes, dia, onDia, onVolver, onApartar, onAbrir }) {
+function FilaCita({ c, clientes, onAbrir }) {
+  return (
+    <button type="button" class={`row cita e-${c.estado}`} onClick={() => onAbrir(c.id)}>
+      <Avatar cliente={clientes.find((x) => x.id === c.clienteId)} nombre={c.clienteNombre} tam="s" />
+      <span class="rt"><b>{c.clienteNombre}</b><small>{laborTxt(c)}{c.vereda ? ` · ${c.vereda}` : ''}</small></span>
+      <span class={`estado-cita ec-${c.estado}`}>{c.estado === 'hecha' ? 'Hecha' : c.estado === 'aplazada' ? 'Aplazada' : 'Apartada'}</span>
+      <Icon name="caret-right-bold" class="ic-xs flecha" />
+    </button>
+  )
+}
+
+// Pantalla principal: arriba la semana de un vistazo; abajo TODAS las citas que vienen, día por día.
+export function Agenda({ citas, clientes, onVolver, onApartar, onAbrir, onAviso }) {
+  const hoy = sumarDias(0)
   const dias = Array.from({ length: 14 }, (_, i) => sumarDias(i))
-  const elegido = dia ?? dias[0]
-  const delDia = activas(citas, elegido).sort((a, b) => (a.orden ?? 0) - (b.orden ?? 0))
-  const horas = horasDe(delDia)
-  const proximas = citas.filter((c) => c.dia > elegido && c.estado === 'apartada').length
+  const orden = (a, b) => a.dia.localeCompare(b.dia) || (a.orden ?? 0) - (b.orden ?? 0)
+  // Lo que quedó apartado en días que ya pasaron y nadie anotó como hecho.
+  const atrasadas = citas.filter((c) => c.dia < hoy && c.estado !== 'hecha').sort(orden)
+  const proximas = citas.filter((c) => c.dia >= hoy && c.estado !== 'cancelada').sort(orden)
+  const grupos = []
+  for (const c of proximas) {
+    let g = grupos.find((x) => x.dia === c.dia)
+    if (!g) { g = { dia: c.dia, items: [] }; grupos.push(g) }
+    g.items.push(c)
+  }
+  const irA = (k) => {
+    vibrar(8)
+    const el = document.getElementById(`dia-${k}`)
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    else onAviso(`${nombreDiaCita(k)} está libre`)
+  }
 
   return (
     <main class="scr">
       <Encabezado titulo="Agenda" onVolver={onVolver} />
-      <div class="semana" role="tablist" aria-label="Días">
+      <p class="sub-q semana-tit">Los próximos 14 días</p>
+      <div class="semana" aria-label="Próximos días">
         {dias.map((k) => {
           const d = deClave(k)
-          const n = activas(citas, k).length
-          const on = k === elegido
+          const lista = activas(citas, k)
+          const lleno = horasDe(lista) >= DIA_LLENO
           return (
-            <button type="button" role="tab" aria-selected={on} class={`dia-b${on ? ' on' : ''}`} onClick={() => { vibrar(8); onDia(k) }}>
-              <span class="db-nombre">{k === dias[0] ? 'Hoy' : DIAS[d.getDay()].slice(0, 3)}</span>
+            <button type="button" class={`dia-b${lista.length ? ' ocupado' : ''}${lleno ? ' lleno' : ''}`} onClick={() => irA(k)}
+              aria-label={`${nombreDiaCita(k)}: ${carga(lista)}`}>
+              <span class="db-nombre">{k === hoy ? 'Hoy' : DIAS[d.getDay()].slice(0, 3)}</span>
               <b class="db-num">{d.getDate()}</b>
-              <span class="db-puntos">{Array.from({ length: Math.min(n, 3) }, () => <i />)}</span>
+              <span class="db-cuenta">{lista.length ? `${lista.length} ${lista.length === 1 ? 'cita' : 'citas'}` : 'libre'}</span>
             </button>
           )
         })}
       </div>
 
-      <header class="dia-agenda">
-        <h2>{nombreDiaCita(elegido)}</h2>
-        <span class={horas >= DIA_LLENO ? 'lleno' : ''}>{horas >= DIA_LLENO ? `Día lleno · unas ${horas} h` : carga(delDia)}</span>
-      </header>
+      {atrasadas.length > 0 && (
+        <section class="grupo-dia atrasadas">
+          <header class="dia-agenda"><h2>Quedaron pendientes</h2><span>de días pasados</span></header>
+          {atrasadas.map((c) => <FilaCita c={c} clientes={clientes} onAbrir={onAbrir} />)}
+        </section>
+      )}
 
-      {delDia.length === 0 && <p class="vacio">No hay nada apartado para este día.</p>}
-      {delDia.map((c) => (
-        <button type="button" class={`row cita e-${c.estado}`} onClick={() => onAbrir(c.id)}>
-          <Avatar cliente={clientes.find((x) => x.id === c.clienteId)} nombre={c.clienteNombre} tam="s" />
-          <span class="rt"><b>{c.clienteNombre}</b><small>{laborTxt(c)}{c.vereda ? ` · ${c.vereda}` : ''}</small></span>
-          <span class={`estado-cita ec-${c.estado}`}>{c.estado === 'hecha' ? 'Hecha' : c.estado === 'aplazada' ? 'Aplazada' : 'Apartada'}</span>
-          <Icon name="caret-right-bold" class="ic-xs flecha" />
-        </button>
-      ))}
-      {proximas > 0 && delDia.length === 0 && <p class="pista">Hay {proximas} {proximas === 1 ? 'cita' : 'citas'} más adelante en la semana.</p>}
+      {grupos.length === 0 && atrasadas.length === 0 && (
+        <p class="vacio separado">No hay nada apartado. Cuando alguien llame a pedir el tractor, toque <b>Apartar un día</b>.</p>
+      )}
+      {grupos.map((g) => {
+        const horas = horasDe(g.items.filter((c) => c.estado !== 'cancelada'))
+        return (
+          <section class="grupo-dia" id={`dia-${g.dia}`}>
+            <header class="dia-agenda">
+              <h2>{nombreDiaCita(g.dia)}</h2>
+              <span class={horas >= DIA_LLENO ? 'lleno' : ''}>{horas >= DIA_LLENO ? `Día lleno · unas ${horas} h` : carga(g.items)}</span>
+            </header>
+            {g.items.map((c) => <FilaCita c={c} clientes={clientes} onAbrir={onAbrir} />)}
+          </section>
+        )
+      })}
 
       <div class="pie-fijo">
-        <button type="button" class="primary con-ic azul" onClick={() => { vibrar(10); onApartar(elegido) }}>
+        <button type="button" class="primary con-ic azul" onClick={() => { vibrar(10); onApartar(null) }}>
           <Icon name="plus-bold" class="ic-s" /> Apartar un día
         </button>
       </div>
