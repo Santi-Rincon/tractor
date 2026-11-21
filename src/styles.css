@@ -453,3 +453,4 @@ small.ocupado { color: var(--agenda) !important; } small.libre { color: var(--tr
 .grupo-dia { display: flex; flex-direction: column; scroll-margin-top: 12px; }
 .grupo-dia .dia-agenda { margin-top: 18px; }
 .atrasadas .dia-agenda h2 { color: var(--gasto); }
+.sel-av.morado { background: #ECE6F5; color: var(--plata); font-weight: 600; }

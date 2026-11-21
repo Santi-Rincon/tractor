@@ -441,13 +441,15 @@ function Fila({ item, clientes = [], onAbrir }) {
     titulo = `Pago a ${r.conductor}`; sub = `${r.pagadoPor === r.conductor ? 'de lo cobrado' : `${r.pagadoPor} pagó`} · ${cuando(r.fecha)}`; valor = r.valor
   } else {
     icono = 'hand-coins-duotone'; clase = ' ok'
-    titulo = r.clienteNombre; sub = `Pagó · recibió ${r.recibio} · ${cuando(r.fecha)}`; valor = r.valor
+    titulo = `Recibió ${r.recibio}`; sub = `Pagó ${r.clienteNombre} · ${cuando(r.fecha)}`; valor = r.valor
   }
   return (
     <button type="button" class="row" onClick={() => onAbrir(tipo, r.id)}>
       {tipo === 'gasto' || tipo === 'pago'
         ? <span class="ic-caja"><Icon name={icono} class={`ic-s i-${tipo}`} /></span>
-        : <Avatar cliente={cliente} nombre={r.clienteNombre} tam="s" insignia={icono} />}
+        : tipo === 'cobro'
+          ? <span class="ic-caja"><span class="sel-av grande morado">{r.recibio[0]}</span></span>
+          : <Avatar cliente={cliente} nombre={r.clienteNombre} tam="s" insignia={icono} />}
       <span class="rt"><b>{titulo}</b><small>{sub}</small></span>
       <span class={`amt${clase}`}>{plata(valor)}</span>
       <Icon name="caret-right-bold" class="ic-xs flecha" />

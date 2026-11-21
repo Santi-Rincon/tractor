@@ -25,8 +25,8 @@ function Pestanas({ pestanas, actual, onCambiar }) {
 function FilaCobro({ c, cliente, onAbrir }) {
   return (
     <button type="button" class="row" onClick={() => onAbrir('cobro', c.id)}>
-      <Avatar cliente={cliente} nombre={c.clienteNombre} tam="s" />
-      <span class="rt"><b>{c.clienteNombre}</b><small>{nombreDia(c.fecha)} · recibió {c.recibio}</small></span>
+      <span class="ic-caja"><span class="sel-av grande morado">{c.recibio[0]}</span></span>
+      <span class="rt"><b>Recibió {c.recibio}</b><small>Pagó {c.clienteNombre} · {nombreDia(c.fecha).toLowerCase()}</small></span>
       <span class="amt ok">{plata(c.valor)}</span>
       <Icon name="caret-right-bold" class="ic-xs flecha" />
     </button>
@@ -112,7 +112,7 @@ function Cobros({ deudas, cobros, cli, onCobrar, onCliente, onAbrir, onVerPagos 
         ))}
       </section>
       <section class="bloque">
-        <header class="bloque-h"><h2>Ya pagaron</h2></header>
+        <header class="bloque-h"><h2>Pagos recibidos</h2></header>
         {cobros.length === 0 && <p class="vacio">Todavía no se ha anotado ningún pago.</p>}
         {cobros.slice(0, 5).map((c) => <FilaCobro c={c} cliente={cli(c.clienteId)} onAbrir={onAbrir} />)}
         {cobros.length > 5 && (
