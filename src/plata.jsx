@@ -5,8 +5,10 @@ import { plata, fechaLarga, hora, nombreDia } from './formato.js'
 import { totalTrabajo, labor, tiempo, estadoTrabajos, ganadoConductor } from './reglas.js'
 import { Recibo, Sello } from './recibo.jsx'
 
+const mesDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
-const delMes = (lista, mes) => lista.filter((x) => x.fecha.slice(0, 7) === mes)
+// La fecha se guarda en UTC; el mes se cuenta con la hora local (un trabajo a las 8 p. m. del 30 no es del mes siguiente).
+const delMes = (lista, mes) => lista.filter((x) => mesDe(new Date(x.fecha)) === mes)
 const suma = (lista, f = (x) => x.valor) => lista.reduce((s, x) => s + f(x), 0)
 
 function Pestanas({ pestanas, actual, onCambiar }) {
@@ -129,7 +131,6 @@ export function enMano(datos, persona) {
   return { recibido, salio: gastado + pagoConductor, tiene: recibido - gastado - pagoConductor }
 }
 
-const mesDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 const SOCIOS = ['Santiago', 'Raúl']
 
 // Cuentas: primero lo esencial (cuánto dejó el tractor en el mes), después cómo está repartido el dinero.

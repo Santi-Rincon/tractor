@@ -4,6 +4,11 @@ import { get, set, del, getMany } from 'idb-keyval'
 const RENOMBRES = { 'Papá': 'Santiago', 'Padrino': 'Raúl' }
 const LISTAS = ['gastos', 'trabajos', 'cobros', 'clientes', 'pagos']
 
+// Pide al navegador que no borre estos datos cuando le falte espacio.
+export async function pedirPersistencia() {
+  try { if (navigator.storage?.persist && !(await navigator.storage.persisted())) await navigator.storage.persist() } catch {}
+}
+
 export async function cargar() {
   const [yoGuardado, ...listas] = await getMany(['yo', ...LISTAS])
   const yo = RENOMBRES[yoGuardado] ?? yoGuardado ?? null

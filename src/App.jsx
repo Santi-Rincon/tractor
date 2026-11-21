@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
-import { cargar, guardarLista, guardarYo, guardarFoto, borrarFoto } from './store.js'
+import { cargar, pedirPersistencia, guardarLista, guardarYo, guardarFoto, borrarFoto } from './store.js'
 import { plata, fechaLarga, saludo, cuando, nombreDia } from './formato.js'
 import { vibrar, nuevoId, Encabezado, ConfirmarBorrado, Avatar, COLORES_CLIENTE } from './comunes.jsx'
 import { CONDUCTORES, labor, totalTrabajo, tiempo, cuentaConductor, deudas, estadoTrabajos } from './reglas.js'
@@ -54,6 +54,7 @@ export function App() {
 
   useEffect(() => {
     cargar().then(({ yo, ...listas }) => { setYo(yo); setDatos(listas); setListo(true) })
+    pedirPersistencia()
     // Mientras se anota algo hay una sola entrada extra en el historial; el botón
     // "atrás" del celular retrocede un paso y, si quedan pasos, la vuelve a poner.
     const atras = () => {
@@ -190,6 +191,9 @@ export function App() {
   const borrarCobro = (id) => actualizar({ cobros: datos.cobros.filter((x) => x.id !== id) })
   const borrarPago = (id) => actualizar({ pagos: datos.pagos.filter((x) => x.id !== id) })
 
+  // Un trabajo anotado con fecha de "Ayer" entra de primero en la lista: se ordena por fecha para agrupar bien por día.
+  const trabajosPorFecha = [...datos.trabajos].sort((a, b) => b.fecha.localeCompare(a.fecha))
+
   // ---------- Registros ----------
   const registros = [
     ...datos.gastos.map((r) => ({ tipo: 'gasto', r })),
@@ -237,8 +241,8 @@ export function App() {
           else mostrarAviso(`${ACCIONES.find((x) => x.id === a).nombre} llega en la próxima versión`)
         }} />
     ); break
-    case 'trabajados': vista = <Trabajados trabajos={datos.trabajos} clientes={datos.clientes} filtro={filtroConductor} onFiltro={setFiltroConductor} onVolver={volver} onAbrir={abrir} onHoras={() => ir('horas')} />; break
-    case 'horas': vista = <Horas yo={yo} trabajos={datos.trabajos} pagos={datos.pagos} clientes={datos.clientes} elegido={conductorHoras} onElegir={setConductorHoras} onVolver={volver} onAbrir={abrir} onAnadir={empezarTrabajo} />; break
+    case 'trabajados': vista = <Trabajados trabajos={trabajosPorFecha} clientes={datos.clientes} filtro={filtroConductor} onFiltro={setFiltroConductor} onVolver={volver} onAbrir={abrir} onHoras={() => ir('horas')} />; break
+    case 'horas': vista = <Horas yo={yo} trabajos={trabajosPorFecha} pagos={datos.pagos} clientes={datos.clientes} elegido={conductorHoras} onElegir={setConductorHoras} onVolver={volver} onAbrir={abrir} onAnadir={empezarTrabajo} />; break
     case 'historial': vista = <Historial registros={registros} clientes={datos.clientes} filtro={filtro} onFiltro={setFiltro} onVolver={volver} onAbrir={abrir} />; break
     case 'recibo':
       if (abierto.tipo === 'gasto') vista = <ReciboGasto gasto={reg} yo={yo} onVolver={volver} onBorrar={(id) => borrarDesdeRecibo('gasto', id)} />
