@@ -1,5 +1,6 @@
 import { useRef, useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
+import { Recibo, Sello } from './recibo.jsx'
 import { Barra, Monto, Teclado, Atajos, SiNo, ConfirmarBorrado, Avatar, Encabezado, vibrar, mil } from './comunes.jsx'
 import { plata, fechaLarga, hora, nombreDia as nombreDiaCorto } from './formato.js'
 import { LABORES, DISTANCIAS, PRECIOS_HORA, labor, valorLabor, totalTrabajo, tiempo, resumenLabor } from './reglas.js'
@@ -266,60 +267,26 @@ export function ListoTrabajo({ t, pago, onInicio, onDeshacer }) {
 }
 
 export function ReciboTrabajo({ t, cliente, cobro, estado, yo, onVolver, onBorrar }) {
-  const [confirmando, setConfirmando] = useState(false)
   return (
-    <main class="scr">
-      <div class="bar">
-        <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
-        <span class="crumb c-trabajo"><b>Recibo de trabajo</b></span>
-      </div>
-      <article class="recibo">
-        <div class="r-top"><Avatar cliente={cliente} nombre={t.clienteNombre} insignia="tractor-duotone" />
-          <span class="r-tipo">{t.clienteNombre}{t.vereda && <small>{t.vereda}</small>}</span></div>
-        <div class="r-valor"><span class="cur">$</span>{plata(totalTrabajo(t))}</div>
-        <Cuenta t={t} pago={cobro?.valor ?? 0} />
-        {estado?.pagado && <Sello texto="Pagado" fecha={estado.fechaPago} />}
-        <dl class="r-filas">
-          {cobro && <div><dt>Recibió la plata</dt><dd>{cobro.recibio}</dd></div>}
-          <div><dt>Conductor</dt><dd>{t.conductor}</dd></div>
-          <div><dt>Fecha</dt><dd>{fechaLarga(new Date(t.fecha))}</dd></div>
-          <div><dt>Hora</dt><dd>{hora(t.fecha)}</dd></div>
-        </dl>
-      </article>
-      <div class="sp" />
-      {t.registradoPor === yo
-        ? <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este trabajo</button>
-        : <p class="pista centro">Solo {t.registradoPor} puede borrarlo.</p>}
-      {confirmando && <ConfirmarBorrado que="este trabajo" onSi={() => onBorrar(t.id)} onNo={() => setConfirmando(false)} />}
-    </main>
+    <Recibo tipo="Trabajo" color="trabajo" que="este trabajo" yo={yo} onVolver={onVolver} onBorrar={() => onBorrar(t.id)}
+      figura={<Avatar cliente={cliente} nombre={t.clienteNombre} />}
+      titulo={t.clienteNombre} sub={t.vereda} valor={totalTrabajo(t)}
+      detalle={<Cuenta t={t} pago={cobro?.valor ?? 0} />}
+      sello={estado?.pagado && <Sello texto="Pagado" fecha={estado.fechaPago} />}
+      filas={[cobro && ['Recibió la plata', cobro.recibio], ['Conductor', t.conductor]]}
+      fecha={t.fecha} autor={t.registradoPor} />
   )
 }
 
 export function ReciboCobro({ c, cliente, yo, onVolver, onVerTrabajo, onBorrar }) {
-  const [confirmando, setConfirmando] = useState(false)
   return (
-    <main class="scr">
-      <div class="bar">
-        <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
-        <span class="crumb c-plata"><b>Recibo de pago</b></span>
-      </div>
-      <article class="recibo">
-        <div class="r-top"><Avatar cliente={cliente} nombre={c.clienteNombre} insignia="hand-coins-duotone" /><span class="r-tipo">{c.clienteNombre} pagó</span></div>
-        <div class="r-valor"><span class="cur">$</span>{plata(c.valor)}</div>
-        <dl class="r-filas">
-          <div><dt>Quién pagó</dt><dd>{c.clienteNombre}</dd></div>
-          <div><dt>Quién recibió</dt><dd>{c.recibio}</dd></div>
-          <div><dt>Fecha</dt><dd>{fechaLarga(new Date(c.fecha))}</dd></div>
-          <div><dt>Hora</dt><dd>{hora(c.fecha)}</dd></div>
-        </dl>
-      </article>
-      <div class="sp" />
-      {c.trabajoId && <button type="button" class="ghost" onClick={onVerTrabajo}>Ver el trabajo de este pago</button>}
-      {!c.trabajoId && (c.registradoPor === yo
-        ? <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este pago</button>
-        : <p class="pista centro">Solo {c.registradoPor} puede borrarlo.</p>)}
-      {confirmando && <ConfirmarBorrado que="este pago" onSi={() => onBorrar(c.id)} onNo={() => setConfirmando(false)} />}
-    </main>
+    <Recibo tipo="Pago de un cliente" color="plata" que="este pago" yo={yo} onVolver={onVolver}
+      onBorrar={c.trabajoId ? null : () => onBorrar(c.id)}
+      figura={<Avatar cliente={cliente} nombre={c.clienteNombre} />}
+      titulo={c.clienteNombre} sub="pagó" valor={c.valor}
+      filas={[['Quién pagó', c.clienteNombre], ['Quién recibió', c.recibio]]}
+      fecha={c.fecha} autor={c.registradoPor}
+      abajo={c.trabajoId && <button type="button" class="ghost" onClick={onVerTrabajo}>Ver el trabajo de este pago</button>} />
   )
 }
 
@@ -370,18 +337,5 @@ export function Trabajados({ trabajos, clientes, filtro, onFiltro, onVolver, onA
         </section>
       ))}
     </main>
-  )
-}
-
-const MESES_CORTOS = ['ENE', 'FEB', 'MAR', 'ABR', 'MAY', 'JUN', 'JUL', 'AGO', 'SEP', 'OCT', 'NOV', 'DIC']
-
-// Sello de tinta, como el de una factura cancelada.
-export function Sello({ texto, fecha }) {
-  const d = fecha ? new Date(fecha) : null
-  return (
-    <div class="sello" role="img" aria-label={`${texto}${d ? ` el ${d.getDate()} de ${MESES_CORTOS[d.getMonth()].toLowerCase()}` : ''}`}>
-      <span class="sello-txt">{texto}</span>
-      {d && <span class="sello-fecha">{d.getDate()} {MESES_CORTOS[d.getMonth()]} {d.getFullYear()}</span>}
-    </div>
   )
 }

@@ -2,8 +2,8 @@ import { useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
 import { Barra, Encabezado, Monto, Teclado, Atajos, Avatar, ConfirmarBorrado, vibrar } from './comunes.jsx'
 import { plata, fechaLarga, hora, nombreDia } from './formato.js'
-import { totalTrabajo, labor, tiempo, estadoTrabajos } from './reglas.js'
-import { Sello } from './trabajo.jsx'
+import { totalTrabajo, labor, tiempo, estadoTrabajos, ganadoConductor } from './reglas.js'
+import { Recibo, Sello } from './recibo.jsx'
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre']
 const delMes = (lista, mes) => lista.filter((x) => x.fecha.slice(0, 7) === mes)
@@ -84,7 +84,7 @@ export function Plata({ yo, esDueno, soloConductor, tab, onTab, datos, deudas, c
         </>
       )}
 
-      {actual === 'cuentas' && <Cuentas yo={yo} datos={datos} personas={personas} />}
+      {actual === 'cuentas' && <Cuentas datos={datos} personas={personas} deudas={deudas} />}
     </main>
   )
 }
@@ -121,72 +121,77 @@ function Cobros({ deudas, cobros, cli, onCobrar, onCliente, onAbrir, onVerPagos 
   )
 }
 
-// Plata del tractor que tiene cada persona: lo que cobró, menos lo que gastó y lo que le pagó al conductor.
+// Dinero del tractor que maneja cada persona: lo que cobró, menos lo que gastó y lo que le pagó al conductor.
 export function enMano(datos, persona) {
   const recibido = suma(datos.cobros.filter((c) => c.recibio === persona))
   const gastado = suma(datos.gastos.filter((g) => g.pagadoPor === persona))
   const pagoConductor = suma(datos.pagos.filter((p) => p.pagadoPor === persona))
-  return { recibido, gastado, pagoConductor, tiene: recibido - gastado - pagoConductor }
+  return { recibido, salio: gastado + pagoConductor, tiene: recibido - gastado - pagoConductor }
 }
 
 const mesDe = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+const SOCIOS = ['Santiago', 'Raúl']
 
-function Cuentas({ yo, datos, personas }) {
+// Cuentas: primero lo esencial (cuánto dejó el tractor en el mes), después cómo está repartido el dinero.
+function Cuentas({ datos, personas, deudas }) {
   const hoy = mesDe(new Date())
   const [mes, setMes] = useState(hoy)
   const [a, m] = mes.split('-').map(Number)
-  const mover = (n) => { const d = new Date(a, m - 1 + n, 1); const nuevo = mesDe(d); if (nuevo <= hoy) { vibrar(8); setMes(nuevo) } }
+  const mover = (n) => { const nuevo = mesDe(new Date(a, m - 1 + n, 1)); if (nuevo <= hoy) { vibrar(8); setMes(nuevo) } }
 
-  const entro = suma(delMes(datos.cobros, mes))
-  const gastos = suma(delMes(datos.gastos, mes))
-  const conductor = suma(delMes(datos.pagos, mes))
   const trabajosMes = delMes(datos.trabajos, mes)
   const trabajado = suma(trabajosMes, totalTrabajo)
-  const mia = enMano(datos, yo)
+  const gastos = suma(delMes(datos.gastos, mes))
+  const conductor = suma(trabajosMes, ganadoConductor)
+  const ganancia = trabajado - gastos - conductor
+  const porSocio = Math.round(ganancia / SOCIOS.length)
+  const porCobrar = suma(deudas.filter((d) => d.debe > 0), (d) => d.debe)
+  const nombreMes = MESES[m - 1][0].toUpperCase() + MESES[m - 1].slice(1)
 
   return (
     <>
+      <div class="mes">
+        <button type="button" class="mes-b" aria-label="Mes anterior" onClick={() => mover(-1)}><Icon name="caret-right-bold" class="ic-s girar" /></button>
+        <b>{nombreMes} {a}</b>
+        <button type="button" class="mes-b" aria-label="Mes siguiente" disabled={mes >= hoy} onClick={() => mover(1)}><Icon name="caret-right-bold" class="ic-s" /></button>
+      </div>
+
+      <section class={`ganancia${ganancia < 0 ? ' baja' : ''}`}>
+        <span class="g-titulo">{ganancia >= 0 ? `Ganancia de ${nombreMes.toLowerCase()}` : `En ${nombreMes.toLowerCase()} se gastó más de lo trabajado`}</span>
+        <b class="g-valor">{ganancia < 0 && '− '}<span class="cur">$</span>{plata(Math.abs(ganancia))}</b>
+        <dl class="g-cuenta">
+          <div><dt>Trabajos hechos ({trabajosMes.length})</dt><dd>+ {plata(trabajado)}</dd></div>
+          <div><dt>Gastos</dt><dd>− {plata(gastos)}</dd></div>
+          <div><dt>Conductor</dt><dd>− {plata(conductor)}</dd></div>
+        </dl>
+        {ganancia > 0 && (
+          <div class="g-socios">
+            <span>A cada socio, mitad y mitad</span>
+            <div>{SOCIOS.map((s) => <p><b>{s}</b>{plata(porSocio)}</p>)}</div>
+          </div>
+        )}
+      </section>
+
       <section class="bloque">
-        <header class="bloque-h"><h2>¿Quién tiene la plata del tractor?</h2></header>
+        <header class="bloque-h"><h2>Gestión del dinero</h2></header>
+        <p class="sub-q sin-margen">Dinero del tractor que maneja cada uno</p>
         {personas.map((p) => {
           const e = enMano(datos, p)
           return (
             <div class="row quieto">
               <span class="ic-caja"><span class="sel-av grande">{p[0]}</span></span>
-              <span class="rt"><b>{p}</b><small>{e.tiene < 0 ? 'puso de su bolsillo' : `recibió ${plata(e.recibido)}`}</small></span>
-              <span class={`amt${e.tiene < 0 ? ' debe' : ''}`}>{plata(Math.abs(e.tiene))}</span>
+              <span class="rt"><b>{p}</b><small>cobró {plata(e.recibido)} · pagó {plata(e.salio)}</small></span>
+              <span class="dinero"><small>{e.tiene >= 0 ? 'tiene' : 'aportó'}</small><b>{plata(Math.abs(e.tiene))}</b></span>
             </div>
           )
         })}
-      </section>
-
-      <section class="bloque">
-        <div class="mes">
-          <button type="button" class="mes-b" aria-label="Mes anterior" onClick={() => mover(-1)}><Icon name="caret-right-bold" class="ic-s girar" /></button>
-          <b>{MESES[m - 1][0].toUpperCase() + MESES[m - 1].slice(1)} {a}</b>
-          <button type="button" class="mes-b" aria-label="Mes siguiente" disabled={mes >= hoy} onClick={() => mover(1)}><Icon name="caret-right-bold" class="ic-s" /></button>
-        </div>
-        <article class="recibo plano balance">
-          <dl class="r-filas">
-            <div><dt>Entró (cobros)</dt><dd class="verde">+ {plata(entro)}</dd></div>
-            <div><dt>Gastos</dt><dd>− {plata(gastos)}</dd></div>
-            <div><dt>Pagos al conductor</dt><dd>− {plata(conductor)}</dd></div>
-            <div class="r-total"><dt>{entro - gastos - conductor >= 0 ? 'Quedó' : 'Faltó'}</dt><dd>{plata(Math.abs(entro - gastos - conductor))}</dd></div>
-          </dl>
-          <p class="balance-nota">Se trabajó por <b>{plata(trabajado)}</b> en {trabajosMes.length} {trabajosMes.length === 1 ? 'trabajo' : 'trabajos'}.</p>
-        </article>
-      </section>
-
-      <section class="bloque">
-        <header class="bloque-h"><h2>Mi plata · {yo}</h2></header>
-        <article class="recibo plano">
-          <dl class="r-filas sin-borde">
-            <div><dt>He recibido de clientes</dt><dd>{plata(mia.recibido)}</dd></div>
-            <div><dt>He gastado en el tractor</dt><dd>{plata(mia.gastado)}</dd></div>
-            <div><dt>Le he pagado al conductor</dt><dd>{plata(mia.pagoConductor)}</dd></div>
-            <div class="r-total"><dt>{mia.tiene >= 0 ? 'Tengo del tractor' : 'He puesto de mi bolsillo'}</dt><dd>{plata(Math.abs(mia.tiene))}</dd></div>
-          </dl>
-        </article>
+        {porCobrar > 0 && (
+          <div class="row quieto">
+            <span class="ic-caja"><Icon name="hand-coins-duotone" class="ic-s i-cobro" /></span>
+            <span class="rt"><b>Por cobrar a clientes</b><small>trabajos que no han pagado</small></span>
+            <span class="dinero"><small>falta</small><b>{plata(porCobrar)}</b></span>
+          </div>
+        )}
       </section>
     </>
   )
@@ -311,28 +316,11 @@ export function ListoPlata({ frase, onInicio, onDeshacer, que }) {
 }
 
 export function ReciboPago({ p, yo, onVolver, onBorrar }) {
-  const [confirmando, setConfirmando] = useState(false)
   return (
-    <main class="scr">
-      <div class="bar">
-        <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
-        <span class="crumb c-plata"><b>Recibo de pago al conductor</b></span>
-      </div>
-      <article class="recibo">
-        <div class="r-top"><span class="burbuja b-plata"><Icon name="steering-wheel-duotone" /></span><span class="r-tipo">Pago a {p.conductor}</span></div>
-        <div class="r-valor"><span class="cur">$</span>{plata(p.valor)}</div>
-        <dl class="r-filas">
-          <div><dt>Quién pagó</dt><dd>{p.pagadoPor === p.conductor ? `${p.conductor} (de lo cobrado)` : p.pagadoPor}</dd></div>
-          <div><dt>Quién recibió</dt><dd>{p.conductor}</dd></div>
-          <div><dt>Fecha</dt><dd>{fechaLarga(new Date(p.fecha))}</dd></div>
-          <div><dt>Hora</dt><dd>{hora(p.fecha)}</dd></div>
-        </dl>
-      </article>
-      <div class="sp" />
-      {p.registradoPor === yo
-        ? <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este pago</button>
-        : <p class="pista centro">Solo {p.registradoPor} puede borrarlo.</p>}
-      {confirmando && <ConfirmarBorrado que="este pago" onSi={() => onBorrar(p.id)} onNo={() => setConfirmando(false)} />}
-    </main>
+    <Recibo tipo="Pago al conductor" color="plata" que="este pago" yo={yo} onVolver={onVolver} onBorrar={() => onBorrar(p.id)}
+      figura={<span class="burbuja b-plata"><Icon name="steering-wheel-duotone" /></span>}
+      titulo={`Pago a ${p.conductor}`} sub={p.pagadoPor === p.conductor ? 'de lo que cobró' : null} valor={p.valor}
+      filas={[['Quién pagó', p.pagadoPor === p.conductor ? `${p.conductor} (de lo cobrado)` : p.pagadoPor], ['Quién recibió', p.conductor]]}
+      fecha={p.fecha} autor={p.registradoPor} />
   )
 }

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'preact/hooks'
 import { Icon } from './Icon.jsx'
 import { Barra, Monto, Teclado, Atajos, SiNo, ConfirmarBorrado, vibrar } from './comunes.jsx'
-import { plata, fechaLarga, hora } from './formato.js'
-import { leerFoto } from './store.js'
+import { plata } from './formato.js'
+import { Recibo } from './recibo.jsx'
 import { comprimir } from './foto.js'
 
 export const CATEGORIAS = [
@@ -102,47 +102,12 @@ export function Foto({ paso, pasos, onVolver, onGuardar }) {
 }
 
 export function ReciboGasto({ gasto, yo, onVolver, onBorrar }) {
-  const [url, setUrl] = useState('')
-  const [grande, setGrande] = useState(false)
-  const [confirmando, setConfirmando] = useState(false)
   const cat = categoria(gasto.categoria)
-  const autor = gasto.registradoPor ?? gasto.pagadoPor
-  useEffect(() => {
-    let u = ''
-    if (gasto.foto) leerFoto(gasto.id).then((b) => { if (b) { u = URL.createObjectURL(b); setUrl(u) } })
-    return () => u && URL.revokeObjectURL(u)
-  }, [gasto.id])
-
   return (
-    <main class="scr">
-      <div class="bar">
-        <button type="button" class="back" onClick={onVolver} aria-label="Volver"><Icon name="arrow-left-bold" class="ic-s" /></button>
-        <span class="crumb c-gasto"><b>Recibo de gasto</b></span>
-      </div>
-      <article class="recibo">
-        <div class="r-top"><span class="burbuja"><Icon name={cat?.icono ?? 'receipt-duotone'} /></span><span class="r-tipo">{gasto.nombre}</span></div>
-        <div class="r-valor"><span class="cur">$</span>{plata(gasto.valor)}</div>
-        <dl class="r-filas">
-          <div><dt>Qué</dt><dd class="largo">{cat?.id === 'otros' ? `Otros · ${gasto.nombre}` : gasto.nombre}</dd></div>
-          <div><dt>Quién pagó</dt><dd>{gasto.pagadoPor}</dd></div>
-          <div><dt>Fecha</dt><dd>{fechaLarga(new Date(gasto.fecha))}</dd></div>
-          <div><dt>Hora</dt><dd>{hora(gasto.fecha)}</dd></div>
-          <div><dt>Anotado por</dt><dd>{autor}</dd></div>
-        </dl>
-        {gasto.foto
-          ? url && <button type="button" class="r-foto" onClick={() => setGrande(true)}><img src={url} alt="Foto de la factura" /><span>Toque para verla grande</span></button>
-          : <p class="r-sin">Sin foto de la factura</p>}
-      </article>
-      <div class="sp" />
-      {autor === yo
-        ? <button type="button" class="ghost peligro-t" onClick={() => { vibrar(10); setConfirmando(true) }}><Icon name="trash-bold" class="ic-s" /> Borrar este gasto</button>
-        : <p class="pista centro">Solo {autor} puede borrarlo.</p>}
-      {confirmando && <ConfirmarBorrado onSi={() => onBorrar(gasto.id)} onNo={() => setConfirmando(false)} />}
-      {grande && (
-        <button type="button" class="foto-grande" onClick={() => setGrande(false)} aria-label="Cerrar foto">
-          <img src={url} alt="Foto de la factura" /><span class="cerrar"><Icon name="x-bold" class="ic-s" /> Cerrar</span>
-        </button>
-      )}
-    </main>
+    <Recibo tipo="Gasto" color="gasto" que="este gasto" yo={yo} onVolver={onVolver} onBorrar={() => onBorrar(gasto.id)}
+      figura={<span class="burbuja"><Icon name={cat?.icono ?? 'receipt-duotone'} /></span>}
+      titulo={gasto.nombre} sub={cat?.id === 'otros' ? 'Otros' : null} valor={gasto.valor}
+      filas={[['Quién pagó', gasto.pagadoPor]]}
+      fecha={gasto.fecha} autor={gasto.registradoPor ?? gasto.pagadoPor} fotoId={gasto.foto ? gasto.id : null} />
   )
 }
