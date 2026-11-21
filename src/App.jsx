@@ -4,7 +4,7 @@ import { cargar, guardarLista, guardarYo, guardarFoto, borrarFoto } from './stor
 import { plata, fechaLarga, saludo, cuando, nombreDia } from './formato.js'
 import { vibrar, nuevoId, Encabezado, ConfirmarBorrado, Avatar, COLORES_CLIENTE } from './comunes.jsx'
 import { CONDUCTORES, labor, totalTrabajo, tiempo, cuentaConductor, deudas, estadoTrabajos } from './reglas.js'
-import { PlataInicio, ElegirDeudor, CuentaCliente, ValorPlata, ElegirConductor, ListoPlata, ReciboPago } from './plata.jsx'
+import { Plata, ElegirDeudor, CuentaCliente, ValorPlata, ElegirConductor, ListoPlata, ReciboPago } from './plata.jsx'
 import { Horas, MisHorasRenglon } from './horas.jsx'
 import { Categoria, Detalle, Cuanto, Foto, ReciboGasto, categoria } from './gasto.jsx'
 import {
@@ -17,7 +17,7 @@ export const PERSONAS = ['Santiago', 'Raúl', 'Leo']
 const ACCIONES = [
   { id: 'trabajo', nombre: 'Trabajo', pista: 'lo que se hizo hoy', icono: 'tractor-duotone' },
   { id: 'gasto', nombre: 'Gasto', pista: 'ACPM, repuestos…', icono: 'gas-pump-duotone' },
-  { id: 'plata', nombre: 'Plata', pista: 'cobros y pagos', icono: 'hand-coins-duotone' },
+  { id: 'plata', nombre: 'Plata', pista: 'cobros y cuentas', icono: 'hand-coins-duotone' },
   { id: 'agenda', nombre: 'Agenda', pista: 'apartar un día', icono: 'calendar-dots-duotone' }
 ]
 
@@ -48,6 +48,7 @@ export function App() {
   const [conductorHoras, setConductorHoras] = useState(null)
   const [bp, setBp] = useState({ cliente: null, conductor: null, digitos: '' })
   const [clienteVisto, setClienteVisto] = useState(null)
+  const [plataTab, setPlataTab] = useState('cobros')
   const [aviso, setAviso] = useState('')
   const avisoTimer = useRef()
 
@@ -247,8 +248,11 @@ export function App() {
       break
 
     case 'plata': vista = (
-      <PlataInicio deudas={listaDeudas} conductores={soloConductor ? cuentasConductores.filter((c) => c.conductor === yo) : cuentasConductores}
-        yoConductorSolo={soloConductor} onVolver={volver} onCobrar={() => empezarCobro()} onPagarConductor={empezarPagoConductor}
+      <Plata yo={yo} esDueno={!soloConductor} soloConductor={soloConductor} tab={plataTab} onTab={setPlataTab} datos={datos}
+        deudas={listaDeudas} personas={PERSONAS}
+        conductores={soloConductor ? cuentasConductores.filter((c) => c.conductor === yo) : cuentasConductores}
+        onVolver={volver} onCobrar={() => empezarCobro()} onPagarConductor={empezarPagoConductor} onAbrir={abrir}
+        onVerPagos={() => { setFiltro('cobro'); ir('historial') }}
         onCliente={(id) => { setClienteVisto(id); ir('cliente') }} onConductor={(c) => { setConductorHoras(c); ir('horas') }} />
     ); break
     case 'cliente': vista = (

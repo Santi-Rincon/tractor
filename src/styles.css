@@ -342,3 +342,30 @@ h1, h2, p { margin: 0; }
 .sello-fecha { font-size: 12px; font-weight: 600; letter-spacing: .12em; padding-top: 3px; border-top: 1.5px solid currentColor; }
 @keyframes sellar { 0% { transform: rotate(-11deg) scale(1.9); opacity: 0; } 70% { opacity: .95; } 100% { transform: rotate(-11deg) scale(1); opacity: .88; } }
 .tag-pagado { display: inline-block; margin-left: 8px; padding: 0 7px; border-radius: 6px; border: 1.5px solid var(--trabajo); color: var(--trabajo); font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; vertical-align: 1px; }
+
+/* Plata en pestañas */
+.selector.n3 { grid-template-columns: repeat(3, 1fr); }
+.selector.n3 .sel { font-size: 17px; min-height: 56px; }
+.sel.morado.on { background: var(--plata); border-color: var(--plata); box-shadow: 0 4px 0 #3A2860; }
+.accion-p.ancha { flex-direction: row; align-items: center; justify-content: flex-start; gap: 14px; min-height: 76px; margin-top: 16px; font-size: 21px; }
+.accion-p.ancha .ic { width: 40px; height: 40px; }
+.row.quieto { cursor: default; }
+.row.quieto:active { transform: none; }
+.mes { display: grid; grid-template-columns: 56px 1fr 56px; align-items: center; text-align: center; }
+.mes b { font-size: 20px; font-weight: 600; }
+.mes-b { width: 56px; height: 56px; border-radius: 50%; display: grid; place-items: center; background: var(--tarjeta); border: 2px solid #D3DACD; box-shadow: 0 3px 0 #D3DACD; color: var(--plata); }
+.mes-b:active { transform: translateY(2px); box-shadow: 0 1px 0 #D3DACD; }
+.mes-b:disabled { opacity: .35; }
+.girar { transform: rotate(180deg); }
+.balance { margin-top: 10px; }
+.balance .r-filas { margin-top: 0; }
+.r-filas dd.verde { color: var(--trabajo); }
+.balance-nota { font-size: 15px; color: var(--suave); padding-top: 10px; border-top: 1.5px dashed var(--linea); }
+.balance-nota b { color: var(--tinta); font-weight: 600; }
+.r-filas.sin-borde div:first-child { border-top: 0; }
+.ver-todo.morado-t { color: var(--plata); }
+.ghost.secundario { margin-top: 16px; border: 2px dashed var(--linea); border-radius: 18px; color: var(--plata); }
+.recibo.plano .r-filas.sin-borde, .balance .r-filas { margin-top: 0; }
+.balance .r-filas div:first-child { border-top: 0; padding-top: 0; }
+.r-filas.sin-borde div:first-child { padding-top: 0; }
+.recibo.plano.balance, .bloque > .recibo.plano { padding-top: 18px; }
